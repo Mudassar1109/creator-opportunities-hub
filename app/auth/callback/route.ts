@@ -46,24 +46,65 @@ export async function GET(request: Request) {
     if (user) {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("role")
+        .select("role, created_at")
         .eq("id", user.id)
         .single();
 
+      console.log("[Auth Callback] User ID:", user.id);
+      console.log("[Auth Callback] Role from URL:", roleParam);
+      console.log("[Auth Callback] User metadata role:", user.user_metadata?.role);
+      console.log("[Auth Callback] Profile:", profile);
+
+      // Determine the effective role from multiple sources (priority order):
+      // 1. roleParam from callback URL (OAuth redirect)
+      // 2. User metadata role (set during signUp)
+      // 3. Existing profile role (already in database)
+      // 4. Default: "creator"
+      const effectiveRole =
+        roleParam ??
+        (user.user_metadata?.role as "creator" | "brand" | undefined) ??
+        (profile?.role as "creator" | "brand" | undefined) ??
+        "creator";
+
+      console.log("[Auth Callback] Effective role:", effectiveRole);
+
       if (profile) {
-        // Redirect based on role
-        if (profile.role === "brand") {
-          redirectTo = "/dashboard/opportunities";
+        // Profile exists — if role doesn't match, update it
+        const profileRole = profile.role as "creator" | "brand";
+        if (profileRole !== effectiveRole) {
+          console.log(`[Auth Callback] Role mismatch: profile=${profileRole}, effective=${effectiveRole}. Updating profile.`);
+          const { error: updateError } = await supabase
+            .from("profiles")
+            .update({ role: effectiveRole })
+            .eq("id", user.id);
+
+          if (updateError) {
+            console.error("[Auth Callback] Failed to update profile role:", updateError);
+          } else {
+            console.log("[Auth Callback] Successfully updated profile role to:", effectiveRole);
+          }
         } else {
-          redirectTo = "/dashboard";
+          console.log("[Auth Callback] Role matches, no update needed:", profileRole);
         }
-      } else if (roleParam) {
-        // If no profile yet but role was passed, use that
-        redirectTo = roleParam === "brand" ? "/dashboard/opportunities" : "/dashboard";
+      } else {
+        // No profile yet — this shouldn't happen (trigger creates it),
+        // but handle it just in case
+        console.log("[Auth Callback] No profile found, creating with role:", effectiveRole);
+        const { error: updateError } = await supabase
+          .from("profiles")
+          .update({ role: effectiveRole })
+          .eq("id", user.id);
+
+        if (updateError) {
+          console.error("[Auth Callback] Failed to set profile role:", updateError);
+        }
       }
+
+      // Redirect based on effective role
+      redirectTo = effectiveRole === "brand" ? "/dashboard/opportunities" : "/dashboard";
+      console.log("[Auth Callback] Redirecting to:", redirectTo);
     }
 
-    // Successfully authenticated → redirect based on role
     return NextResponse.redirect(new URL(redirectTo, requestUrl.origin));
   }
 

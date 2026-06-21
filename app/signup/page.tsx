@@ -121,7 +121,7 @@ function SignupPageContent() {
           username: email.trim().split("@")[0],
           role: role,
         },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?role=${role}`,
       },
     });
 
@@ -143,6 +143,8 @@ function SignupPageContent() {
     setSuccess(null);
     setGoogleLoading(true);
 
+    console.log("[Signup] Starting Google OAuth with role:", role);
+
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -157,7 +159,10 @@ function SignupPageContent() {
     setGoogleLoading(false);
 
     if (error) {
+      console.error("[Signup] Google OAuth error:", error);
       setError(error.message);
+    } else {
+      console.log("[Signup] Google OAuth initiated successfully, redirecting with role:", role);
     }
   }
 
