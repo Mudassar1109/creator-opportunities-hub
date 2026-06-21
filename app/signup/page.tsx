@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
@@ -64,11 +64,12 @@ function getPasswordStrength(pw: string): {
   return { score, label: "Excellent", color: "bg-emerald-600" };
 }
 
-// ─── Signup Page ─────────────────────────────────────────────
-export default function SignupPage() {
+// ─── Signup Page Content ─────────────────────────────────────
+function SignupPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const roleParam = searchParams.get("role") as "creator" | "brand" | null;
+  const role = roleParam ?? "creator";
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -118,7 +119,7 @@ export default function SignupPage() {
         data: {
           full_name: fullName.trim(),
           username: email.trim().split("@")[0],
-          role: roleParam,
+          role: role,
         },
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
@@ -146,9 +147,9 @@ export default function SignupPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?role=${roleParam}`,
+        redirectTo: `${window.location.origin}/auth/callback?role=${role}`,
         queryParams: {
-          role: roleParam,
+          role: role,
         },
       },
     });
@@ -417,5 +418,18 @@ export default function SignupPage() {
         </p>
       </div>
     </main>
+  );
+}
+
+// ─── Signup Page with Suspense Boundary ─────────────────────
+export default function SignupPage() {
+  return (
+    <Suspense fallback={
+      <main className="flex min-h-screen flex-col items-center justify-center bg-white px-4 py-12 sm:px-6 lg:px-8">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-600 border-t-transparent" />
+      </main>
+    }>
+      <SignupPageContent />
+    </Suspense>
   );
 }
