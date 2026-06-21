@@ -2,6 +2,9 @@
 // Production-ready landing page with all 10 sections
 
 import { Navbar } from "@/components/navbar";
+import { OpportunityCard } from "@/components/opportunity-card";
+import { createClient } from "@/lib/supabase/server";
+import Link from "next/link";
 
 /* ─── Data ─── */
 
@@ -62,7 +65,7 @@ const CATEGORIES = [
     name: "Brand Deals",
     count: "2,400+",
     icon: "🤝",
-    gradient: "from-blue-500 to-blue-600",
+    gradient: "from-purple-500 to-purple-600",
   },
   {
     name: "Affiliate Programs",
@@ -74,7 +77,7 @@ const CATEGORIES = [
     name: "Sponsorships",
     count: "3,100+",
     icon: "🎯",
-    gradient: "from-indigo-500 to-indigo-600",
+    gradient: "from-purple-600 to-cyan-500",
   },
   {
     name: "UGC Jobs",
@@ -193,7 +196,7 @@ const CATEGORY_FILTER_OPTIONS = [
 function BadgeColor(badge: string) {
   switch (badge) {
     case "Featured":
-      return "bg-blue-100 text-blue-700";
+      return "bg-purple-100 text-purple-700";
     case "New":
       return "bg-emerald-100 text-emerald-700";
     case "Hot":
@@ -208,7 +211,28 @@ function BadgeColor(badge: string) {
 }
 
 /* ─── Page Component ─── */
-export default function HomePage() {
+export default async function HomePage() {
+  const supabase = await createClient();
+
+  // Fetch featured opportunities from DB
+  const { data: featuredOpps } = await supabase
+    .from("featured_opportunities")
+    .select("*")
+    .eq("status", "active")
+    .order("is_featured", { ascending: false })
+    .order("published_at", { ascending: false })
+    .limit(6);
+
+  // Fetch categories
+  const { data: dbCategories } = await supabase
+    .from("categories")
+    .select("name, slug")
+    .eq("is_active", true)
+    .order("sort_order");
+
+  const opportunities = featuredOpps ?? [];
+  const hasOpportunities = opportunities.length > 0;
+
   return (
     <main id="home" className="flex-1 bg-white text-gray-900">
       {/* ═══════════════════════════════════════════
@@ -221,20 +245,20 @@ export default function HomePage() {
       ═══════════════════════════════════════════ */}
       <section className="relative overflow-hidden pb-20 pt-24 sm:pb-28 sm:pt-32 lg:pb-36 lg:pt-40">
         {/* Decorative blobs */}
-        <div className="pointer-events-none absolute -top-32 left-1/2 h-[600px] w-[900px] -translate-x-1/2 rounded-full bg-gradient-to-br from-blue-100/60 via-purple-100/40 to-indigo-100/60 blur-3xl" />
-        <div className="pointer-events-none absolute -left-40 top-20 h-72 w-72 rounded-full bg-blue-200/30 blur-3xl" />
-        <div className="pointer-events-none absolute -right-40 top-40 h-72 w-72 rounded-full bg-purple-200/30 blur-3xl" />
+        <div className="pointer-events-none absolute -top-32 left-1/2 h-[600px] w-[900px] -translate-x-1/2 rounded-full bg-gradient-to-br from-purple-100/60 via-purple-100/40 to-cyan-100/60 blur-3xl" />
+        <div className="pointer-events-none absolute -left-40 top-20 h-72 w-72 rounded-full bg-purple-200/30 blur-3xl" />
+        <div className="pointer-events-none absolute -right-40 top-40 h-72 w-72 rounded-full bg-cyan-200/30 blur-3xl" />
 
         <div className="relative mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
           {/* Pill badge */}
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-semibold text-blue-700 sm:text-sm">
-            <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-purple-200 bg-purple-50 px-4 py-1.5 text-xs font-semibold text-purple-700 sm:text-sm">
+            <span className="h-1.5 w-1.5 rounded-full bg-purple-500" />
             Trusted by 85,000+ creators worldwide
           </div>
 
           <h1 className="mx-auto max-w-4xl text-4xl font-extrabold leading-tight tracking-tight text-gray-900 sm:text-5xl md:text-6xl lg:text-7xl">
             Find Your Next{" "}
-            <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-purple-600 via-purple-500 to-cyan-500 bg-clip-text text-transparent">
               Creator Opportunity
             </span>
           </h1>
@@ -246,13 +270,13 @@ export default function HomePage() {
 
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <a
-              href="#opportunities"
-              className="w-full rounded-2xl bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 px-8 py-4 text-base font-bold text-white shadow-xl shadow-blue-500/25 transition hover:shadow-2xl hover:shadow-blue-500/30 sm:w-auto sm:text-lg"
+              href="/opportunities"
+              className="w-full rounded-2xl bg-gradient-to-r from-purple-600 to-cyan-500 px-8 py-4 text-base font-bold text-white shadow-xl shadow-purple-500/25 transition-all duration-200 hover:shadow-2xl hover:shadow-purple-500/30 hover:-translate-y-0.5 sm:w-auto sm:text-lg"
             >
               Explore Opportunities
             </a>
             <a
-              href="#post"
+              href="/dashboard/opportunities/new"
               className="w-full rounded-2xl border-2 border-gray-200 bg-white px-8 py-4 text-base font-bold text-gray-800 shadow-sm transition hover:border-gray-300 hover:shadow-md sm:w-auto sm:text-lg"
             >
               Post Opportunity
@@ -290,7 +314,7 @@ export default function HomePage() {
                 id="keyword"
                 type="text"
                 placeholder="Search opportunities…"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 py-3 pl-11 pr-4 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 py-3 pl-11 pr-4 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-purple-500 focus:bg-white focus:ring-2 focus:ring-purple-500/20"
               />
             </div>
 
@@ -299,7 +323,7 @@ export default function HomePage() {
               <label htmlFor="category" className="sr-only">Category</label>
               <select
                 id="category"
-                className="w-full appearance-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+                className="w-full appearance-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700 outline-none transition focus:border-purple-500 focus:bg-white focus:ring-2 focus:ring-purple-500/20"
                 defaultValue="All Categories"
               >
                 {CATEGORY_FILTER_OPTIONS.map((c) => (
@@ -313,7 +337,7 @@ export default function HomePage() {
               <label htmlFor="country" className="sr-only">Country</label>
               <select
                 id="country"
-                className="w-full appearance-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+                className="w-full appearance-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700 outline-none transition focus:border-purple-500 focus:bg-white focus:ring-2 focus:ring-purple-500/20"
                 defaultValue="All Countries"
               >
                 <option>All Countries</option>
@@ -326,7 +350,7 @@ export default function HomePage() {
             {/* Search Button */}
             <button
               type="button"
-              className="rounded-xl bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/25 transition hover:shadow-xl hover:shadow-blue-500/30"
+              className="rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-purple-500/25 transition-all duration-200 hover:shadow-xl hover:shadow-purple-500/30"
             >
               Search
             </button>
@@ -343,11 +367,11 @@ export default function HomePage() {
             {STATS.map((stat) => (
               <div
                 key={stat.label}
-                className="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-sm transition hover:border-blue-200 hover:shadow-lg sm:p-8"
+                className="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-sm transition-all duration-300 hover:border-purple-200/50 hover:shadow-lg sm:p-8"
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 via-purple-50/0 to-indigo-50/0 transition group-hover:from-blue-50/80 group-hover:via-purple-50/60 group-hover:to-indigo-50/80" />
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-50/0 via-purple-50/0 to-cyan-50/0 transition group-hover:from-purple-50/80 group-hover:via-purple-50/60 group-hover:to-cyan-50/80" />
                 <div className="relative">
-                  <p className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-3xl font-extrabold text-transparent sm:text-4xl lg:text-5xl">
+                  <p className="bg-gradient-to-r from-purple-600 to-cyan-500 bg-clip-text text-3xl font-extrabold text-transparent sm:text-4xl lg:text-5xl">
                     {stat.value}
                   </p>
                   <p className="mt-2 text-sm font-medium text-gray-500">{stat.label}</p>
@@ -364,7 +388,7 @@ export default function HomePage() {
       <section id="opportunities" className="bg-gray-50/60 px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto mb-14 max-w-2xl text-center">
-            <span className="mb-3 inline-block rounded-full bg-blue-100 px-4 py-1 text-xs font-bold uppercase tracking-wider text-blue-700">
+            <span className="mb-3 inline-block rounded-full bg-purple-100 px-4 py-1 text-xs font-bold uppercase tracking-wider text-purple-700">
               Featured
             </span>
             <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
@@ -376,53 +400,70 @@ export default function HomePage() {
           </div>
 
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {OPPORTUNITIES.map((opp) => (
-              <article
-                key={opp.company}
-                className="group relative flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition hover:border-blue-200 hover:shadow-xl"
-              >
-                {/* Badge */}
-                <span className={`mb-4 inline-flex w-fit rounded-lg px-3 py-1 text-xs font-bold ${BadgeColor(opp.badge)}`}>
-                  {opp.badge}
-                </span>
-
-                {/* Company */}
-                <h3 className="text-xl font-bold text-gray-900">{opp.company}</h3>
-                <p className="mt-1 text-sm font-semibold text-blue-600">{opp.type}</p>
-
-                {/* Details */}
-                <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-4">
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wider text-gray-400">Budget</p>
-                    <p className="mt-0.5 text-sm font-bold text-gray-900">{opp.budget}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs font-medium uppercase tracking-wider text-gray-400">Category</p>
-                    <p className="mt-0.5 text-sm font-medium text-gray-600">{opp.category}</p>
-                  </div>
-                </div>
-
-                {/* Apply */}
-                <a
-                  href="#apply"
-                  className="mt-6 block rounded-xl bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 py-3 text-center text-sm font-bold text-white shadow-md shadow-blue-500/20 transition group-hover:shadow-lg group-hover:shadow-blue-500/30"
+            {hasOpportunities ? (
+              opportunities.map((opp) => (
+                <OpportunityCard
+                  key={opp.id}
+                  id={opp.id}
+                  title={opp.title}
+                  slug={opp.slug}
+                  brand_name={opp.brand_name}
+                  brand_logo={opp.brand_logo}
+                  brand_verified={opp.brand_verified}
+                  opportunity_type={opp.opportunity_type}
+                  budget_min={opp.budget_min}
+                  budget_max={opp.budget_max}
+                  budget_type={opp.budget_type}
+                  currency={opp.currency}
+                  country={opp.country}
+                  deadline={(opp as unknown as { deadline?: string }).deadline}
+                  is_featured={opp.is_featured}
+                  category_names={opp.category_names}
+                  applications_count={opp.applications_count}
+                />
+              ))
+            ) : (
+              OPPORTUNITIES.map((opp) => (
+                <article
+                  key={opp.company}
+                  className="group relative flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-300 hover:border-purple-200/50 hover:shadow-xl"
                 >
-                  Apply Now
-                </a>
-              </article>
-            ))}
+                  <span className={`mb-4 inline-flex w-fit rounded-lg px-3 py-1 text-xs font-bold ${BadgeColor(opp.badge)}`}>
+                    {opp.badge}
+                  </span>
+                  <h3 className="text-xl font-bold text-gray-900">{opp.company}</h3>
+                  <p className="mt-1 text-sm font-semibold text-purple-600">{opp.type}</p>
+                  <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-4">
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wider text-gray-400">Budget</p>
+                      <p className="mt-0.5 text-sm font-bold text-gray-900">{opp.budget}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-medium uppercase tracking-wider text-gray-400">Category</p>
+                      <p className="mt-0.5 text-sm font-medium text-gray-600">{opp.category}</p>
+                    </div>
+                  </div>
+                  <Link
+                    href="/opportunities"
+                    className="mt-6 block rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 py-3 text-center text-sm font-bold text-white shadow-md shadow-purple-500/20 transition-all duration-200 group-hover:shadow-lg group-hover:shadow-purple-500/30"
+                  >
+                    Apply Now
+                  </Link>
+                </article>
+              ))
+            )}
           </div>
 
           <div className="mt-12 text-center">
-            <a
-              href="#all-opportunities"
-              className="inline-flex items-center gap-2 rounded-2xl border-2 border-gray-200 bg-white px-8 py-3.5 text-sm font-bold text-gray-800 shadow-sm transition hover:border-gray-300 hover:shadow-md"
+            <Link
+              href="/opportunities"
+              className="inline-flex items-center gap-2 rounded-2xl border-2 border-gray-200 bg-white px-8 py-3.5 text-sm font-bold text-gray-800 shadow-sm transition-all duration-200 hover:border-purple-200 hover:shadow-md"
             >
               View All Opportunities
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>
-            </a>
+            </Link>
           </div>
         </div>
       </section>
@@ -473,7 +514,7 @@ export default function HomePage() {
       <section id="about" className="bg-gray-50/60 px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto mb-16 max-w-2xl text-center">
-            <span className="mb-3 inline-block rounded-full bg-indigo-100 px-4 py-1 text-xs font-bold uppercase tracking-wider text-indigo-700">
+            <span className="mb-3 inline-block rounded-full bg-cyan-100 px-4 py-1 text-xs font-bold uppercase tracking-wider text-cyan-700">
               Simple
             </span>
             <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
@@ -489,11 +530,11 @@ export default function HomePage() {
               <div key={s.step} className="group relative">
                 {/* Connector line (hidden on last) */}
                 {idx < STEPS.length - 1 && (
-                  <div className="absolute right-0 top-12 hidden h-0.5 w-full translate-x-1/2 bg-gradient-to-r from-blue-200 to-purple-200 lg:block" />
+                  <div className="absolute right-0 top-12 hidden h-0.5 w-full translate-x-1/2 bg-gradient-to-r from-purple-200 to-cyan-200 lg:block" />
                 )}
 
-                <div className="relative flex flex-col items-center rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-sm transition hover:border-blue-200 hover:shadow-lg sm:p-8">
-                  <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-600 text-lg font-extrabold text-white shadow-md shadow-blue-500/25">
+                <div className="relative flex flex-col items-center rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-sm transition-all duration-300 hover:border-purple-200/50 hover:shadow-lg sm:p-8">
+                  <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-600 to-cyan-500 text-lg font-extrabold text-white shadow-md shadow-purple-500/20">
                     {s.step}
                   </span>
                   <h3 className="mt-5 text-lg font-bold text-gray-900">{s.title}</h3>
@@ -511,7 +552,7 @@ export default function HomePage() {
       <section className="px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto mb-14 max-w-2xl text-center">
-            <span className="mb-3 inline-block rounded-full bg-rose-100 px-4 py-1 text-xs font-bold uppercase tracking-wider text-rose-700">
+            <span className="mb-3 inline-block rounded-full bg-purple-100 px-4 py-1 text-xs font-bold uppercase tracking-wider text-purple-700">
               Loved by Creators
             </span>
             <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
@@ -526,7 +567,7 @@ export default function HomePage() {
             {TESTIMONIALS.map((t) => (
               <blockquote
                 key={t.name}
-                className="flex flex-col justify-between rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition hover:shadow-lg sm:p-8"
+                className="flex flex-col justify-between rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg sm:p-8"
               >
                 {/* Stars */}
                 <div className="mb-4 flex gap-0.5">
@@ -542,7 +583,7 @@ export default function HomePage() {
                 </p>
 
                 <footer className="mt-6 flex items-center gap-3 border-t border-gray-100 pt-5">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-600 text-xs font-bold text-white">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-600 to-cyan-500 text-xs font-bold text-white">
                     {t.avatar}
                   </span>
                   <div>
@@ -560,7 +601,7 @@ export default function HomePage() {
           9 · NEWSLETTER
       ═══════════════════════════════════════════ */}
       <section className="px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
-        <div className="relative mx-auto max-w-4xl overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-600 p-8 text-center shadow-2xl shadow-purple-500/25 sm:p-12 lg:p-16">
+        <div className="relative mx-auto max-w-4xl overflow-hidden rounded-3xl bg-gradient-to-br from-purple-600 via-purple-500 to-cyan-500 p-8 text-center shadow-2xl shadow-purple-500/25 sm:p-12 lg:p-16">
           {/* Decorative circles */}
           <div className="pointer-events-none absolute -left-16 -top-16 h-64 w-64 rounded-full bg-white/10 blur-2xl" />
           <div className="pointer-events-none absolute -bottom-16 -right-16 h-64 w-64 rounded-full bg-white/10 blur-2xl" />
@@ -585,7 +626,7 @@ export default function HomePage() {
               />
               <button
                 type="submit"
-                className="rounded-xl bg-white px-6 py-3.5 text-sm font-bold text-blue-700 shadow-lg transition hover:bg-gray-100 hover:shadow-xl"
+                className="rounded-xl bg-white px-6 py-3.5 text-sm font-bold text-purple-700 shadow-lg transition hover:bg-gray-100 hover:shadow-xl"
               >
                 Subscribe Free
               </button>
@@ -607,11 +648,11 @@ export default function HomePage() {
             {/* Brand */}
             <div className="sm:col-span-2 lg:col-span-1">
               <a href="#home" className="flex items-center gap-2">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-600 text-sm font-bold text-white shadow-md">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-purple-600 to-cyan-500 text-sm font-bold text-white shadow-md shadow-purple-500/20">
                   C
                 </span>
                 <span className="text-lg font-bold tracking-tight text-gray-900">
-                  Creator<span className="text-blue-600">Hub</span>
+                  Creator<span className="text-purple-600">Hub</span>
                 </span>
               </a>
               <p className="mt-4 max-w-xs text-sm leading-relaxed text-gray-500">
@@ -629,7 +670,7 @@ export default function HomePage() {
                     key={social.label}
                     href={`#${social.label.toLowerCase()}`}
                     aria-label={social.label}
-                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 transition hover:border-blue-200 hover:text-blue-600"
+                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 transition hover:border-purple-200 hover:text-purple-600"
                   >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d={social.path} />
@@ -645,7 +686,7 @@ export default function HomePage() {
               <ul className="space-y-2.5">
                 {["Browse Opportunities", "Brand Deals", "Sponsorships", "Affiliate Programs", "Creator Jobs", "UGC Opportunities"].map((l) => (
                   <li key={l}>
-                    <a href="#" className="text-sm text-gray-500 transition hover:text-blue-600">{l}</a>
+                    <a href="#" className="text-sm text-gray-500 transition hover:text-purple-600">{l}</a>
                   </li>
                 ))}
               </ul>
@@ -657,7 +698,7 @@ export default function HomePage() {
               <ul className="space-y-2.5">
                 {["Post Opportunity", "Pricing", "Enterprise Plans", "Creator Search", "Campaign Tools", "Analytics"].map((l) => (
                   <li key={l}>
-                    <a href="#" className="text-sm text-gray-500 transition hover:text-blue-600">{l}</a>
+                    <a href="#" className="text-sm text-gray-500 transition hover:text-purple-600">{l}</a>
                   </li>
                 ))}
               </ul>
@@ -669,7 +710,7 @@ export default function HomePage() {
               <ul className="space-y-2.5">
                 {["About Us", "Blog", "Careers", "Press", "Privacy Policy", "Terms of Service", "Contact"].map((l) => (
                   <li key={l}>
-                    <a href="#" className="text-sm text-gray-500 transition hover:text-blue-600">{l}</a>
+                    <a href="#" className="text-sm text-gray-500 transition hover:text-purple-600">{l}</a>
                   </li>
                 ))}
               </ul>

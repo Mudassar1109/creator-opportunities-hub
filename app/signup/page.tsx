@@ -152,18 +152,18 @@ export default function SignupPage() {
     <main className="flex min-h-screen flex-col items-center justify-center bg-white px-4 py-12 sm:px-6 lg:px-8">
       {/* Background decoration */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -top-40 left-1/2 h-[500px] w-[700px] -translate-x-1/2 rounded-full bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 blur-3xl" />
+        <div className="absolute -top-40 left-1/2 h-[500px] w-[700px] -translate-x-1/2 rounded-full bg-gradient-to-br from-purple-50 via-purple-50 to-cyan-50 blur-3xl" />
       </div>
 
       <div className="relative w-full max-w-md">
         {/* Logo */}
         <div className="mb-8 text-center">
           <Link href="/" className="inline-flex items-center gap-2">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-600 text-base font-bold text-white shadow-md">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-600 to-cyan-500 text-base font-bold text-white shadow-md shadow-purple-500/20">
               C
             </span>
             <span className="text-xl font-bold tracking-tight text-gray-900">
-              Creator<span className="text-blue-600">Hub</span>
+              Creator<span className="text-purple-600">Hub</span>
             </span>
           </Link>
         </div>
@@ -255,7 +255,7 @@ export default function SignupPage() {
                 placeholder="Jane Doe"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-purple-500 focus:bg-white focus:ring-2 focus:ring-purple-500/20"
               />
             </div>
 
@@ -272,7 +272,7 @@ export default function SignupPage() {
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-purple-500 focus:bg-white focus:ring-2 focus:ring-purple-500/20"
               />
             </div>
 
@@ -290,7 +290,7 @@ export default function SignupPage() {
                 placeholder="Minimum 8 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-purple-500 focus:bg-white focus:ring-2 focus:ring-purple-500/20"
               />
 
               {/* Password strength meter */}
@@ -336,7 +336,7 @@ export default function SignupPage() {
                 className={`w-full rounded-xl border bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:bg-white focus:ring-2 ${
                   confirmPassword && confirmPassword !== password
                     ? "border-red-300 focus:border-red-500 focus:ring-red-500/20"
-                    : "border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
+                    : "border-gray-200 focus:border-purple-500 focus:ring-purple-500/20"
                 }`}
               />
               {confirmPassword && confirmPassword !== password && (
@@ -347,7 +347,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading || googleLoading}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/25 transition hover:shadow-xl hover:shadow-blue-500/30 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-purple-500/25 transition-all duration-200 hover:shadow-xl hover:shadow-purple-500/30 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? (
                 <>
@@ -363,11 +363,11 @@ export default function SignupPage() {
           {/* Terms */}
           <p className="mt-5 text-center text-xs leading-relaxed text-gray-400">
             By creating an account, you agree to our{" "}
-            <Link href="/terms" className="text-gray-500 underline transition hover:text-blue-600">
+            <Link href="/terms" className="text-gray-500 underline transition hover:text-purple-600">
               Terms of Service
             </Link>{" "}
             and{" "}
-            <Link href="/privacy" className="text-gray-500 underline transition hover:text-blue-600">
+            <Link href="/privacy" className="text-gray-500 underline transition hover:text-purple-600">
               Privacy Policy
             </Link>
             .
@@ -379,7 +379,7 @@ export default function SignupPage() {
           Already have an account?{" "}
           <Link
             href="/login"
-            className="font-bold text-blue-600 transition hover:text-blue-700"
+            className="font-bold text-purple-600 transition hover:text-purple-700"
           >
             Log in
           </Link>

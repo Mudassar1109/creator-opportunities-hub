@@ -169,103 +169,118 @@ export function ProfileForm({ profile, userEmail }: Props) {
   const fieldErr = (field: string) => result?.fieldErrors?.[field];
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {/* ── Alerts ─────────────────────────────────── */}
       {result?.success && (
-        <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-          Profile saved successfully!
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 px-5 py-4 text-sm font-medium text-emerald-800">
+          <div className="flex items-center gap-2">
+            <svg className="h-5 w-5 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Profile saved successfully!
+          </div>
         </div>
       )}
       {result?.error && !result.success && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-          {result.error}
+        <div className="rounded-2xl border border-red-200 bg-red-50/80 px-5 py-4 text-sm font-medium text-red-800">
+          <div className="flex items-center gap-2">
+            <svg className="h-5 w-5 shrink-0 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+            </svg>
+            {result.error}
+          </div>
         </div>
       )}
 
       {/* ── Avatar ─────────────────────────────────── */}
-      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">Profile Photo</h2>
-        <div className="flex items-center gap-6">
-          <div className="h-20 w-20 overflow-hidden rounded-full bg-gray-100 ring-2 ring-gray-200">
-            {avatarUrl ? (
-              <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-gray-500">
-                {(fullName || "?")[0].toUpperCase()}
-              </div>
-            )}
-          </div>
-          <div className="flex-1">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              onChange={handleAvatarChange}
-              className="hidden"
-            />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
-            >
-              {uploading ? "Uploading..." : "Upload Photo"}
-            </button>
-            <p className="mt-1 text-xs text-gray-600">JPG, PNG, WebP or GIF. Max 5 MB.</p>
-            {avatarError && <p className="mt-1 text-xs text-red-600">{avatarError}</p>}
+      <section className="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-purple-200/50">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-50/0 to-cyan-50/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        <div className="relative">
+          <h2 className="mb-4 text-lg font-bold text-gray-900">Profile Photo</h2>
+          <div className="flex items-center gap-6">
+            <div className="h-20 w-20 overflow-hidden rounded-2xl border-2 border-purple-100 bg-gradient-to-br from-purple-50 to-cyan-50 shadow-md">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-purple-400">
+                  {(fullName || "?")[0].toUpperCase()}
+                </div>
+              )}
+            </div>
+            <div className="flex-1">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleAvatarChange}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-purple-200 hover:bg-purple-50 disabled:opacity-50"
+              >
+                {uploading ? "Uploading..." : "Upload Photo"}
+              </button>
+              <p className="mt-1.5 text-xs text-gray-500">JPG, PNG, WebP or GIF. Max 5 MB.</p>
+              {avatarError && <p className="mt-1 text-xs font-medium text-red-600">{avatarError}</p>}
+            </div>
           </div>
         </div>
       </section>
 
       {/* ── Basic Info ─────────────────────────────── */}
-      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">Basic Information</h2>
+      <section className="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-purple-200/50">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-50/0 to-cyan-50/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        <div className="relative">
+          <h2 className="mb-4 text-lg font-bold text-gray-900">Basic Information</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           {/* Full Name */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Full Name *</label>
+            <label className="mb-1.5 block text-sm font-semibold text-gray-700">Full Name *</label>
             <input
               type="text"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className={`w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-blue-500 ${fieldErr("full_name") ? "border-red-400" : "border-gray-300"}`}
+              className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 ${fieldErr("full_name") ? "border-red-400" : "border-gray-200"}`}
               placeholder="Jane Doe"
             />
-            {fieldErr("full_name") && <p className="mt-1 text-xs text-red-600">{fieldErr("full_name")}</p>}
+            {fieldErr("full_name") && <p className="mt-1 text-xs font-medium text-red-600">{fieldErr("full_name")}</p>}
           </div>
 
           {/* Username */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Username *</label>
+            <label className="mb-1.5 block text-sm font-semibold text-gray-700">Username *</label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""))}
-              className={`w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-blue-500 ${fieldErr("username") ? "border-red-400" : "border-gray-300"}`}
+              className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 ${fieldErr("username") ? "border-red-400" : "border-gray-200"}`}
               placeholder="janedoe"
             />
-            {fieldErr("username") && <p className="mt-1 text-xs text-red-600">{fieldErr("username")}</p>}
+            {fieldErr("username") && <p className="mt-1 text-xs font-medium text-red-600">{fieldErr("username")}</p>}
           </div>
 
           {/* Email (read-only) */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Email</label>
+            <label className="mb-1.5 block text-sm font-semibold text-gray-700">Email</label>
             <input
               type="email"
               value={userEmail}
               disabled
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-500"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3 text-sm text-gray-500"
             />
           </div>
 
           {/* Headline */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Headline</label>
+            <label className="mb-1.5 block text-sm font-semibold text-gray-700">Headline</label>
             <input
               type="text"
               value={headline}
               onChange={(e) => setHeadline(e.target.value)}
-              className={`w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-blue-500 ${fieldErr("headline") ? "border-red-400" : "border-gray-300"}`}
+              className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 ${fieldErr("headline") ? "border-red-400" : "border-gray-200"}`}
               placeholder="Fitness creator with 500K followers"
               maxLength={120}
             />
@@ -275,29 +290,32 @@ export function ProfileForm({ profile, userEmail }: Props) {
 
         {/* Bio */}
         <div className="mt-4">
-          <label className="mb-1 block text-sm font-medium text-gray-700">Bio</label>
+          <label className="mb-1.5 block text-sm font-semibold text-gray-700">Bio</label>
           <textarea
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             rows={4}
             maxLength={1000}
-            className={`w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-blue-500 ${fieldErr("bio") ? "border-red-400" : "border-gray-300"}`}
+            className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 ${fieldErr("bio") ? "border-red-400" : "border-gray-200"}`}
             placeholder="Tell brands about your content, audience, and what makes you unique..."
           />
           <p className="mt-1 text-xs text-gray-500">{bio.length}/1000</p>
         </div>
+        </div>
       </section>
 
       {/* ── Location ───────────────────────────────── */}
-      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">Location</h2>
+      <section className="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-purple-200/50">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-50/0 to-cyan-50/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        <div className="relative">
+          <h2 className="mb-4 text-lg font-bold text-gray-900">Location</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Country</label>
+            <label className="mb-1.5 block text-sm font-semibold text-gray-700">Country</label>
             <select
               value={country}
               onChange={(e) => setCountry(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
             >
               <option value="">Select country</option>
               {COUNTRIES.map((c) => (
@@ -306,22 +324,25 @@ export function ProfileForm({ profile, userEmail }: Props) {
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">City</label>
+            <label className="mb-1.5 block text-sm font-semibold text-gray-700">City</label>
             <input
               type="text"
               value={city}
               onChange={(e) => setCity(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
               placeholder="Los Angeles"
             />
           </div>
         </div>
+        </div>
       </section>
 
       {/* ── Platforms ──────────────────────────────── */}
-      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-1 text-lg font-semibold text-gray-900">Platforms</h2>
-        <p className="mb-4 text-sm text-gray-600">Select the platforms where you create content.</p>
+      <section className="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-purple-200/50">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-50/0 to-cyan-50/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        <div className="relative">
+          <h2 className="mb-1 text-lg font-bold text-gray-900">Platforms</h2>
+          <p className="mb-4 text-sm text-gray-500">Select the platforms where you create content.</p>
         <div className="flex flex-wrap gap-2">
           {PLATFORMS.map((p) => {
             const active = platforms.includes(p);
@@ -330,10 +351,10 @@ export function ProfileForm({ profile, userEmail }: Props) {
                 key={p}
                 type="button"
                 onClick={() => togglePlatform(p)}
-                className={`rounded-full border px-4 py-1.5 text-sm font-medium transition ${
+                className={`rounded-full border px-4 py-2 text-sm font-semibold transition-all duration-200 ${
                   active
-                    ? "border-blue-600 bg-blue-50 text-blue-700"
-                    : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50"
+                    ? "border-purple-500 bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 shadow-sm shadow-purple-500/10"
+                    : "border-gray-200 bg-white text-gray-600 hover:border-purple-200 hover:bg-purple-50/50"
                 }`}
               >
                 {p}
@@ -341,28 +362,34 @@ export function ProfileForm({ profile, userEmail }: Props) {
             );
           })}
         </div>
+        </div>
       </section>
 
       {/* ── Follower Count ─────────────────────────── */}
-      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">Audience Size</h2>
+      <section className="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-purple-200/50">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-50/0 to-cyan-50/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        <div className="relative">
+          <h2 className="mb-4 text-lg font-bold text-gray-900">Audience Size</h2>
         <div className="max-w-xs">
-          <label className="mb-1 block text-sm font-medium text-gray-700">Total Followers (across platforms)</label>
+          <label className="mb-1.5 block text-sm font-semibold text-gray-700">Total Followers (across platforms)</label>
           <input
             type="number"
             min={0}
             value={followerCount}
             onChange={(e) => setFollowerCount(e.target.value)}
-            className={`w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-blue-500 ${fieldErr("follower_count") ? "border-red-400" : "border-gray-300"}`}
+            className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 ${fieldErr("follower_count") ? "border-red-400" : "border-gray-200"}`}
           />
-          {fieldErr("follower_count") && <p className="mt-1 text-xs text-red-600">{fieldErr("follower_count")}</p>}
+          {fieldErr("follower_count") && <p className="mt-1 text-xs font-medium text-red-600">{fieldErr("follower_count")}</p>}
+        </div>
         </div>
       </section>
 
       {/* ── Niches ─────────────────────────────────── */}
-      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-1 text-lg font-semibold text-gray-900">Content Niches</h2>
-        <p className="mb-4 text-sm text-gray-600">Select the topics you create content about.</p>
+      <section className="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-purple-200/50">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-50/0 to-cyan-50/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        <div className="relative">
+          <h2 className="mb-1 text-lg font-bold text-gray-900">Content Niches</h2>
+          <p className="mb-4 text-sm text-gray-500">Select the topics you create content about.</p>
         <div className="flex flex-wrap gap-2">
           {NICHES.map((n) => {
             const active = niches.includes(n);
@@ -371,10 +398,10 @@ export function ProfileForm({ profile, userEmail }: Props) {
                 key={n}
                 type="button"
                 onClick={() => toggleNiche(n)}
-                className={`rounded-full border px-4 py-1.5 text-sm font-medium transition ${
+                className={`rounded-full border px-4 py-2 text-sm font-semibold transition-all duration-200 ${
                   active
-                    ? "border-purple-600 bg-purple-50 text-purple-700"
-                    : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50"
+                    ? "border-cyan-500 bg-gradient-to-r from-cyan-50 to-cyan-100 text-cyan-700 shadow-sm shadow-cyan-500/10"
+                    : "border-gray-200 bg-white text-gray-600 hover:border-cyan-200 hover:bg-cyan-50/50"
                 }`}
               >
                 {n}
@@ -382,106 +409,111 @@ export function ProfileForm({ profile, userEmail }: Props) {
             );
           })}
         </div>
+        </div>
       </section>
 
       {/* ── Social Links ───────────────────────────── */}
-      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">Social Links & Portfolio</h2>
+      <section className="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-purple-200/50">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-50/0 to-cyan-50/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        <div className="relative">
+          <h2 className="mb-4 text-lg font-bold text-gray-900">Social Links & Portfolio</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           {/* Website */}
           <div className="sm:col-span-2">
-            <label className="mb-1 block text-sm font-medium text-gray-700">Website / Portfolio</label>
+            <label className="mb-1.5 block text-sm font-semibold text-gray-700">Website / Portfolio</label>
             <input
               type="url"
               value={website}
               onChange={(e) => setWebsite(e.target.value)}
-              className={`w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-blue-500 ${fieldErr("website") ? "border-red-400" : "border-gray-300"}`}
+              className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 ${fieldErr("website") ? "border-red-400" : "border-gray-200"}`}
               placeholder="https://yourwebsite.com"
             />
-            {fieldErr("website") && <p className="mt-1 text-xs text-red-600">{fieldErr("website")}</p>}
+            {fieldErr("website") && <p className="mt-1 text-xs font-medium text-red-600">{fieldErr("website")}</p>}
           </div>
 
           {/* YouTube */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">YouTube</label>
+            <label className="mb-1.5 block text-sm font-semibold text-gray-700">YouTube</label>
             <input
               type="url"
               value={youtubeUrl}
               onChange={(e) => setYoutubeUrl(e.target.value)}
-              className={`w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-blue-500 ${fieldErr("youtube_url") ? "border-red-400" : "border-gray-300"}`}
+              className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 ${fieldErr("youtube_url") ? "border-red-400" : "border-gray-200"}`}
               placeholder="https://youtube.com/@channel"
             />
-            {fieldErr("youtube_url") && <p className="mt-1 text-xs text-red-600">{fieldErr("youtube_url")}</p>}
+            {fieldErr("youtube_url") && <p className="mt-1 text-xs font-medium text-red-600">{fieldErr("youtube_url")}</p>}
           </div>
 
           {/* TikTok */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">TikTok</label>
+            <label className="mb-1.5 block text-sm font-semibold text-gray-700">TikTok</label>
             <input
               type="url"
               value={tiktokUrl}
               onChange={(e) => setTiktokUrl(e.target.value)}
-              className={`w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-blue-500 ${fieldErr("tiktok_url") ? "border-red-400" : "border-gray-300"}`}
+              className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 ${fieldErr("tiktok_url") ? "border-red-400" : "border-gray-200"}`}
               placeholder="https://tiktok.com/@user"
             />
-            {fieldErr("tiktok_url") && <p className="mt-1 text-xs text-red-600">{fieldErr("tiktok_url")}</p>}
+            {fieldErr("tiktok_url") && <p className="mt-1 text-xs font-medium text-red-600">{fieldErr("tiktok_url")}</p>}
           </div>
 
           {/* Instagram */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Instagram</label>
+            <label className="mb-1.5 block text-sm font-semibold text-gray-700">Instagram</label>
             <input
               type="url"
               value={instagramUrl}
               onChange={(e) => setInstagramUrl(e.target.value)}
-              className={`w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-blue-500 ${fieldErr("instagram_url") ? "border-red-400" : "border-gray-300"}`}
+              className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 ${fieldErr("instagram_url") ? "border-red-400" : "border-gray-200"}`}
               placeholder="https://instagram.com/user"
             />
-            {fieldErr("instagram_url") && <p className="mt-1 text-xs text-red-600">{fieldErr("instagram_url")}</p>}
+            {fieldErr("instagram_url") && <p className="mt-1 text-xs font-medium text-red-600">{fieldErr("instagram_url")}</p>}
           </div>
 
           {/* Twitter/X */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Twitter / X</label>
+            <label className="mb-1.5 block text-sm font-semibold text-gray-700">Twitter / X</label>
             <input
               type="url"
               value={twitterUrl}
               onChange={(e) => setTwitterUrl(e.target.value)}
-              className={`w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-blue-500 ${fieldErr("twitter_url") ? "border-red-400" : "border-gray-300"}`}
+              className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 ${fieldErr("twitter_url") ? "border-red-400" : "border-gray-200"}`}
               placeholder="https://x.com/user"
             />
-            {fieldErr("twitter_url") && <p className="mt-1 text-xs text-red-600">{fieldErr("twitter_url")}</p>}
+            {fieldErr("twitter_url") && <p className="mt-1 text-xs font-medium text-red-600">{fieldErr("twitter_url")}</p>}
           </div>
 
           {/* LinkedIn */}
           <div className="sm:col-span-2">
-            <label className="mb-1 block text-sm font-medium text-gray-700">LinkedIn</label>
+            <label className="mb-1.5 block text-sm font-semibold text-gray-700">LinkedIn</label>
             <input
               type="url"
               value={linkedinUrl}
               onChange={(e) => setLinkedinUrl(e.target.value)}
-              className={`w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-blue-500 ${fieldErr("linkedin_url") ? "border-red-400" : "border-gray-300"}`}
+              className={`w-full rounded-xl border px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 ${fieldErr("linkedin_url") ? "border-red-400" : "border-gray-200"}`}
               placeholder="https://linkedin.com/in/user"
             />
-            {fieldErr("linkedin_url") && <p className="mt-1 text-xs text-red-600">{fieldErr("linkedin_url")}</p>}
+            {fieldErr("linkedin_url") && <p className="mt-1 text-xs font-medium text-red-600">{fieldErr("linkedin_url")}</p>}
           </div>
+        </div>
         </div>
       </section>
 
       {/* ── Visibility ─────────────────────────────── */}
-      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-between">
+      <section className="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-purple-200/50">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-50/0 to-cyan-50/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        <div className="relative flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Public Profile</h2>
-            <p className="text-sm text-gray-600">Allow brands to find and view your profile.</p>
+            <h2 className="text-lg font-bold text-gray-900">Public Profile</h2>
+            <p className="text-sm text-gray-500">Allow brands to find and view your profile.</p>
           </div>
           <button
             type="button"
             onClick={() => setIsPublic(!isPublic)}
-            className={`relative h-6 w-11 rounded-full transition-colors ${isPublic ? "bg-blue-600" : "bg-gray-300"}`}
+            className={`relative h-7 w-12 rounded-full transition-all duration-200 ${isPublic ? "bg-gradient-to-r from-purple-600 to-cyan-500 shadow-md shadow-purple-500/20" : "bg-gray-300"}`}
           >
             <span
-              className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${isPublic ? "translate-x-5" : ""}`}
+              className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform duration-200 ${isPublic ? "translate-x-5" : ""}`}
             />
           </button>
         </div>
@@ -492,7 +524,7 @@ export function ProfileForm({ profile, userEmail }: Props) {
         <button
           type="submit"
           disabled={saving}
-          className="rounded-xl bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 px-8 py-3 text-sm font-semibold text-white shadow-md shadow-blue-500/25 transition hover:shadow-lg hover:shadow-blue-500/30 disabled:opacity-50"
+          className="rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 px-8 py-3.5 text-sm font-bold text-white shadow-lg shadow-purple-500/25 transition-all duration-200 hover:shadow-xl hover:shadow-purple-500/30 hover:-translate-y-0.5 disabled:opacity-50"
         >
           {saving ? (
             <span className="flex items-center gap-2">

@@ -38,15 +38,15 @@ export function Navbar() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/90 backdrop-blur-md">
+    <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-xl">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-600 text-sm font-bold text-white shadow-md">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-purple-600 to-cyan-500 text-sm font-bold text-white shadow-md shadow-purple-500/20">
             C
           </span>
           <span className="text-lg font-bold tracking-tight text-gray-900 sm:text-xl">
-            Creator<span className="text-blue-600">Hub</span>
+            Creator<span className="text-purple-600">Hub</span>
           </span>
         </Link>
 
@@ -76,7 +76,7 @@ export function Navbar() {
               </Link>
               <Link
                 href="/dashboard"
-                className="rounded-xl bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-500/25 transition hover:shadow-lg hover:shadow-blue-500/30"
+                className="rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-purple-500/20 transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/30 hover:-translate-y-0.5"
               >
                 My Account
               </Link>
@@ -91,7 +91,7 @@ export function Navbar() {
               </Link>
               <Link
                 href="/signup"
-                className="rounded-xl bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-500/25 transition hover:shadow-lg hover:shadow-blue-500/30"
+                className="rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-purple-500/20 transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/30 hover:-translate-y-0.5"
               >
                 Get Started
               </Link>
@@ -140,7 +140,7 @@ export function Navbar() {
                   </Link>
                   <Link
                     href="/dashboard"
-                    className="block rounded-xl bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 px-5 py-2.5 text-center text-sm font-semibold text-white"
+                    className="block rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 px-5 py-2.5 text-center text-sm font-semibold text-white"
                   >
                     My Account
                   </Link>
@@ -155,7 +155,7 @@ export function Navbar() {
                   </Link>
                   <Link
                     href="/signup"
-                    className="block rounded-xl bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 px-5 py-2.5 text-center text-sm font-semibold text-white"
+                    className="block rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 px-5 py-2.5 text-center text-sm font-semibold text-white"
                   >
                     Get Started
                   </Link>
