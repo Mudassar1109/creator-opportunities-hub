@@ -1,6 +1,6 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUserWithRole } from "@/lib/supabase/server";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { ApplicantActions } from "./applicant-actions";
 
@@ -17,9 +17,12 @@ interface PageProps {
 
 export default async function ApplicantsPage({ params }: PageProps) {
   const { id } = await params;
+  const result = await getUserWithRole();
+  if (!result) redirect("/login");
+  if (result.role !== "brand") redirect("/dashboard");
+
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const user = result.user;
 
   // Get opportunity and verify ownership
   const { data: opp } = await supabase

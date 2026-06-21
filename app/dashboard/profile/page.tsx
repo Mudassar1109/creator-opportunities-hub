@@ -1,7 +1,7 @@
 // app/dashboard/profile/page.tsx — Creator Profile Editor
 // Server component: fetches profile data and passes to client form
 
-import { createClient, getUser } from "@/lib/supabase/server";
+import { createClient, getUserWithRole } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import type { Profile } from "@/lib/database.types";
 import { ProfileForm } from "@/components/profile-form";
@@ -16,10 +16,12 @@ export const metadata: Metadata = {
 };
 
 export default async function ProfilePage() {
-  const user = await getUser();
-  if (!user) redirect("/login?redirect=/dashboard/profile");
+  const result = await getUserWithRole();
+  if (!result) redirect("/login?redirect=/dashboard/profile");
+  if (result.role !== "creator") redirect("/dashboard");
 
   const supabase = await createClient();
+  const user = result.user;
 
   const { data: profile } = await supabase
     .from("profiles")

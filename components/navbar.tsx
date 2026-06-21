@@ -7,7 +7,7 @@ import type { User } from "@supabase/supabase-js";
 
 const NAV_LINKS = [
   { label: "Home", href: "/#home" },
-  { label: "Opportunities", href: "/#opportunities" },
+  { label: "Opportunities", href: "/opportunities" },
   { label: "Categories", href: "/#categories" },
   { label: "About", href: "/#about" },
   { label: "Contact", href: "/#contact" },
@@ -16,6 +16,7 @@ const NAV_LINKS = [
 export function Navbar() {
   const [user, setUser] = useState<User | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [userRole, setUserRole] = useState<"creator" | "brand">("creator");
 
   useEffect(() => {
     const supabase = createClient();
@@ -24,6 +25,16 @@ export function Navbar() {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
       setLoaded(true);
+      if (user) {
+        supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .single()
+          .then(({ data }) => {
+            if (data?.role) setUserRole(data.role as "creator" | "brand");
+          });
+      }
     });
 
     // Listen for auth changes
@@ -32,10 +43,26 @@ export function Navbar() {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setLoaded(true);
+      if (session?.user) {
+        supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", session.user.id)
+          .single()
+          .then(({ data }) => {
+            if (data?.role) setUserRole(data.role as "creator" | "brand");
+          });
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const roleBadge = userRole === "brand"
+    ? "bg-purple-100 text-purple-700 border-purple-200"
+    : "bg-cyan-100 text-cyan-700 border-cyan-200";
+
+  const roleLabel = userRole === "brand" ? "Brand" : "Creator";
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-xl">
@@ -68,6 +95,9 @@ export function Navbar() {
         <div className="hidden items-center gap-3 lg:flex">
           {loaded && user ? (
             <>
+              <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-bold ${roleBadge}`}>
+                {roleLabel}
+              </span>
               <Link
                 href="/dashboard"
                 className="rounded-lg px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
@@ -75,10 +105,10 @@ export function Navbar() {
                 Dashboard
               </Link>
               <Link
-                href="/dashboard"
+                href={userRole === "brand" ? "/dashboard/opportunities" : "/dashboard/applications"}
                 className="rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-purple-500/20 transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/30 hover:-translate-y-0.5"
               >
-                My Account
+                {userRole === "brand" ? "My Opportunities" : "My Applications"}
               </Link>
             </>
           ) : (
@@ -132,6 +162,11 @@ export function Navbar() {
             <div className="mt-4 space-y-2 border-t border-gray-100 pt-4">
               {loaded && user ? (
                 <>
+                  <div className="px-3 py-1">
+                    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-bold ${roleBadge}`}>
+                      {roleLabel}
+                    </span>
+                  </div>
                   <Link
                     href="/dashboard"
                     className="block rounded-lg px-3 py-2.5 text-center text-sm font-semibold text-gray-700 hover:bg-gray-50"
@@ -139,10 +174,10 @@ export function Navbar() {
                     Dashboard
                   </Link>
                   <Link
-                    href="/dashboard"
+                    href={userRole === "brand" ? "/dashboard/opportunities" : "/dashboard/applications"}
                     className="block rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 px-5 py-2.5 text-center text-sm font-semibold text-white"
                   >
-                    My Account
+                    {userRole === "brand" ? "My Opportunities" : "My Applications"}
                   </Link>
                 </>
               ) : (

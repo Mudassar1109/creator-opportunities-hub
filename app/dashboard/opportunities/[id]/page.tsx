@@ -1,5 +1,5 @@
 import { redirect, notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUserWithRole } from "@/lib/supabase/server";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { OpportunityForm } from "../new/opportunity-form";
 
@@ -16,9 +16,12 @@ interface PageProps {
 
 export default async function EditOpportunityPage({ params }: PageProps) {
   const { id } = await params;
+  const result = await getUserWithRole();
+  if (!result) redirect("/login");
+  if (result.role !== "brand") redirect("/dashboard");
+
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const user = result.user;
 
   // Get brands owned by user
   const { data: brands } = await supabase

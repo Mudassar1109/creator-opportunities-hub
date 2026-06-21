@@ -20,9 +20,10 @@ interface Props {
   fullName?: string | null;
   avatarUrl?: string | null;
   email?: string;
+  role?: "creator" | "brand";
 }
 
-export function WelcomeBanner({ fullName, avatarUrl, email }: Props) {
+export function WelcomeBanner({ fullName, avatarUrl, email, role = "creator" }: Props) {
   const [greeting, setGreeting] = useState("");
   const [emoji, setEmoji] = useState("");
 
@@ -31,13 +32,17 @@ export function WelcomeBanner({ fullName, avatarUrl, email }: Props) {
     setEmoji(getGreetingEmoji());
   }, []);
 
-  const displayName = fullName || email?.split("@")[0] || "Creator";
+  const displayName = fullName || email?.split("@")[0] || (role === "brand" ? "Brand" : "Creator");
   const initials = displayName
     .split(" ")
     .map((n) => n[0])
     .join("")
     .toUpperCase()
     .slice(0, 2);
+
+  const subtitle = role === "brand"
+    ? "Here's what's happening with your brand opportunities today."
+    : "Here's what's happening with your creator profile today.";
 
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-gray-100 dark:border-gray-800 bg-gradient-to-r from-purple-600 via-purple-500 to-cyan-500 p-6 shadow-lg shadow-purple-500/10 sm:p-8">
@@ -64,7 +69,7 @@ export function WelcomeBanner({ fullName, avatarUrl, email }: Props) {
             Welcome back{displayName ? `, ${displayName}` : ""}
           </h1>
           <p className="mt-1 text-sm text-white/70">
-            Here&apos;s what&apos;s happening with your creator profile today.
+            {subtitle}
           </p>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUserWithRole } from "@/lib/supabase/server";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { WithdrawButton } from "./withdraw-button";
 
@@ -19,9 +19,12 @@ export default async function ApplicationsPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const statusFilter = params.status || "all";
 
+  const result = await getUserWithRole();
+  if (!result) redirect("/login");
+  if (result.role !== "creator") redirect("/dashboard");
+
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const user = result.user;
 
   // Get all applications with opportunity info
   let query = supabase
