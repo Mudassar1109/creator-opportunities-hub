@@ -6,7 +6,7 @@
  *   2. Email magic-link / email verification
  *
  * Supabase sends a `code` query parameter that we exchange for a session.
- * On success → redirect to /dashboard
+ * On success → redirect based on user role (creator → /dashboard, brand → /dashboard/opportunities)
  * On error   → redirect to /login with error message
  */
 
@@ -16,7 +16,7 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
-  const redirectTo = requestUrl.searchParams.get("redirect_to") || "/dashboard";
+  const roleParam = requestUrl.searchParams.get("role") as "creator" | "brand" | null;
   const error = requestUrl.searchParams.get("error");
   const errorDescription = requestUrl.searchParams.get("error_description");
 
@@ -39,7 +39,31 @@ export async function GET(request: Request) {
       return NextResponse.redirect(loginUrl);
     }
 
-    // Successfully authenticated → redirect to dashboard
+    // Get user profile to determine redirect based on role
+    const { data: { user } } = await supabase.auth.getUser();
+    let redirectTo = "/dashboard";
+
+    if (user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+      if (profile) {
+        // Redirect based on role
+        if (profile.role === "brand") {
+          redirectTo = "/dashboard/opportunities";
+        } else {
+          redirectTo = "/dashboard";
+        }
+      } else if (roleParam) {
+        // If no profile yet but role was passed, use that
+        redirectTo = roleParam === "brand" ? "/dashboard/opportunities" : "/dashboard";
+      }
+    }
+
+    // Successfully authenticated → redirect based on role
     return NextResponse.redirect(new URL(redirectTo, requestUrl.origin));
   }
 

@@ -16,26 +16,18 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
+import type { UserRole } from "@/lib/database.types";
 import { ThemeToggle } from "./theme-provider";
 
 // ─── Nav items ──────────────────────────────────────────────
 
-const NAV_ITEMS = [
+const CREATOR_NAV_ITEMS = [
   {
     label: "Dashboard",
     href: "/dashboard",
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
-      </svg>
-    ),
-  },
-  {
-    label: "Profile",
-    href: "/dashboard/profile",
-    icon: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
       </svg>
     ),
   },
@@ -58,11 +50,50 @@ const NAV_ITEMS = [
     ),
   },
   {
-    label: "Messages",
-    href: "/dashboard/messages",
+    label: "Profile",
+    href: "/dashboard/profile",
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+      </svg>
+    ),
+  },
+] as const;
+
+const BRAND_NAV_ITEMS = [
+  {
+    label: "Dashboard",
+    href: "/dashboard",
+    icon: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25a2.25 2.25 0 01-2.25-2.25V18z" />
+      </svg>
+    ),
+  },
+  {
+    label: "My Opportunities",
+    href: "/dashboard/opportunities",
+    icon: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.181 2.181 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 00-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0112 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 01-.673-.38m0 0A2.181 2.181 0 013 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 013.413-.387m7.5 0V5.25A2.25 2.25 0 0013.5 3h-3a2.25 2.25 0 00-2.25 2.25v.894m7.5 0a48.667 48.667 0 00-7.5 0M12 12.75h.008v.008H12v-.008z" />
+      </svg>
+    ),
+  },
+  {
+    label: "Applicants",
+    href: "/dashboard/applications",
+    icon: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19h3c.621 0 1.125-.504 1.125-1.125V6a2.25 2.25 0 00-2.25-2.25h-3.375c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h3.375M9 19h3c.621 0 1.125-.504 1.125-1.125V6a2.25 2.25 0 00-2.25-2.25H6.375c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125H9" />
+      </svg>
+    ),
+  },
+  {
+    label: "Create Opportunity",
+    href: "/dashboard/opportunities/create",
+    icon: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
       </svg>
     ),
   },
@@ -146,7 +177,7 @@ function NotificationBell() {
 }
 
 // ─── Profile Dropdown (mobile) ──────────────────────────────
-function ProfileDropdown({ user, onLogout }: { user: User | null; onLogout: () => void }) {
+function ProfileDropdown({ user, userRole, onLogout }: { user: User | null; userRole: UserRole; onLogout: () => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -176,7 +207,7 @@ function ProfileDropdown({ user, onLogout }: { user: User | null; onLogout: () =
           {/* User info */}
           <div className="mb-2 rounded-xl bg-gray-50 dark:bg-gray-800 px-4 py-3">
             <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{user.email}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Creator account</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{userRole === "brand" ? "Brand account" : "Creator account"}</p>
           </div>
 
           <div className="space-y-0.5">
@@ -223,14 +254,41 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
+  const [userRole, setUserRole] = useState<UserRole>("creator");
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+      if (user) {
+        supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .single()
+          .then(({ data }) => {
+            if (data?.role) {
+              setUserRole(data.role);
+            }
+          });
+      }
+    });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       setUser(session?.user ?? null);
+      if (session?.user) {
+        supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", session.user.id)
+          .single()
+          .then(({ data }) => {
+            if (data?.role) {
+              setUserRole(data.role);
+            }
+          });
+      }
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -293,7 +351,7 @@ export function Sidebar() {
         {/* Main nav */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           <ul className="space-y-1">
-            {NAV_ITEMS.map((item) => {
+            {(userRole === "brand" ? BRAND_NAV_ITEMS : CREATOR_NAV_ITEMS).map((item) => {
               const active = isActive(item.href);
               return (
                 <li key={item.label}>
@@ -376,7 +434,7 @@ export function Sidebar() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-xs font-semibold text-gray-900 dark:text-gray-100">{user.email}</p>
-                <p className="text-[10px] text-gray-500 dark:text-gray-500">Creator account</p>
+                <p className="text-[10px] text-gray-500 dark:text-gray-500">{userRole === "brand" ? "Brand account" : "Creator account"}</p>
               </div>
             </div>
           )}
@@ -407,7 +465,7 @@ export function Sidebar() {
         {/* Right side: bell + profile */}
         <div className="flex items-center gap-1">
           <NotificationBell />
-          <ProfileDropdown user={user} onLogout={handleLogout} />
+          <ProfileDropdown user={user} userRole={userRole} onLogout={handleLogout} />
         </div>
       </div>
     </>

@@ -90,7 +90,7 @@ export function Navbar() {
                 Log In
               </Link>
               <Link
-                href="/signup"
+                href="/signup/role"
                 className="rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-purple-500/20 transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/30 hover:-translate-y-0.5"
               >
                 Get Started
@@ -154,7 +154,7 @@ export function Navbar() {
                     Log In
                   </Link>
                   <Link
-                    href="/signup"
+                    href="/signup/role"
                     className="block rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 px-5 py-2.5 text-center text-sm font-semibold text-white"
                   >
                     Get Started

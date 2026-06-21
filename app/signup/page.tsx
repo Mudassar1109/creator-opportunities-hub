@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 
@@ -67,6 +67,8 @@ function getPasswordStrength(pw: string): {
 // ─── Signup Page ─────────────────────────────────────────────
 export default function SignupPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const roleParam = searchParams.get("role") as "creator" | "brand" | null;
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -78,6 +80,12 @@ export default function SignupPage() {
   const [success, setSuccess] = useState<string | null>(null);
 
   const strength = getPasswordStrength(password);
+
+  // Redirect to role selection if no role is specified
+  if (!roleParam) {
+    router.push("/signup/role");
+    return null;
+  }
 
   // ── Validation ───────────────────────────────────────────
   function validate(): string | null {
@@ -110,6 +118,7 @@ export default function SignupPage() {
         data: {
           full_name: fullName.trim(),
           username: email.trim().split("@")[0],
+          role: roleParam,
         },
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
@@ -137,7 +146,10 @@ export default function SignupPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/auth/callback?role=${roleParam}`,
+        queryParams: {
+          role: roleParam,
+        },
       },
     });
 
@@ -172,11 +184,17 @@ export default function SignupPage() {
         <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-xl shadow-gray-200/60 sm:p-10">
           <div className="mb-8 text-center">
             <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 sm:text-3xl">
-              Create your account
+              Create your {roleParam === "brand" ? "brand" : "creator"} account
             </h1>
             <p className="mt-2 text-sm text-gray-500">
-              Join 85,000+ creators finding paid opportunities
+              {roleParam === "brand"
+                ? "Start posting opportunities and finding talented creators"
+                : "Join 85,000+ creators finding paid opportunities"}
             </p>
+            <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+              <span className="flex h-1.5 w-1.5 rounded-full bg-purple-500" />
+              {roleParam === "brand" ? "Brand Account" : "Creator Account"}
+            </div>
           </div>
 
           {/* Alerts */}

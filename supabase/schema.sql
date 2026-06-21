@@ -61,6 +61,11 @@ CREATE TYPE public.company_size AS ENUM (
   'enterprise'
 );
 
+CREATE TYPE public.user_role AS ENUM (
+  'creator',
+  'brand'
+);
+
 -- ============================================================
 -- 2. UTILITY — updated_at trigger
 -- ============================================================
@@ -104,6 +109,7 @@ CREATE TABLE public.profiles (
   instagram_url text,
   twitter_url   text,
   linkedin_url  text,
+  role          public.user_role DEFAULT 'creator',
   is_verified   boolean DEFAULT false,
   is_public     boolean DEFAULT true,
   created_at    timestamptz DEFAULT now() NOT NULL,
@@ -368,13 +374,17 @@ SECURITY DEFINER
 SET search_path = ''
 AS $$
 BEGIN
-  INSERT INTO public.profiles (id, full_name, email, username, avatar_url)
+  INSERT INTO public.profiles (id, full_name, email, username, avatar_url, role)
   VALUES (
     NEW.id,
     COALESCE(NEW.raw_user_meta_data ->> 'full_name', NEW.raw_user_meta_data ->> 'name', ''),
     NEW.email,
     COALESCE(NEW.raw_user_meta_data ->> 'username', split_part(NEW.email, '@', 1)),
-    NEW.raw_user_meta_data ->> 'avatar_url'
+    NEW.raw_user_meta_data ->> 'avatar_url',
+    COALESCE(
+      (NEW.raw_user_meta_data ->> 'role')::public.user_role,
+      'creator'::public.user_role
+    )
   );
   RETURN NEW;
 END;

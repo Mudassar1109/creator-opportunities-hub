@@ -53,6 +53,8 @@ export type LocationType = "remote" | "on_site" | "hybrid";
 
 export type CompanySize = "startup" | "small" | "medium" | "large" | "enterprise";
 
+export type UserRole = "creator" | "brand";
+
 // ─── Tables ─────────────────────────────────────────────────
 
 export interface Database {
@@ -78,6 +80,7 @@ export interface Database {
           instagram_url: string | null;
           twitter_url: string | null;
           linkedin_url: string | null;
+          role: UserRole;
           is_verified: boolean;
           is_public: boolean;
           created_at: string;
@@ -102,6 +105,7 @@ export interface Database {
           instagram_url?: string | null;
           twitter_url?: string | null;
           linkedin_url?: string | null;
+          role?: UserRole;
           is_verified?: boolean;
           is_public?: boolean;
           created_at?: string;
@@ -125,6 +129,7 @@ export interface Database {
           instagram_url?: string | null;
           twitter_url?: string | null;
           linkedin_url?: string | null;
+          role?: UserRole;
           is_verified?: boolean;
           is_public?: boolean;
         };
@@ -531,6 +536,7 @@ export interface Database {
       budget_type: BudgetType;
       location_type: LocationType;
       company_size: CompanySize;
+      user_role: UserRole;
     };
   };
 }
