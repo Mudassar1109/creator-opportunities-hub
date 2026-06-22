@@ -18,6 +18,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import type { UserRole } from "@/lib/database.types";
 import { ThemeToggle } from "./theme-provider";
+import { markNotificationAsRead, markAllNotificationsAsRead } from "@/lib/actions/notifications";
 
 // ─── Nav items ──────────────────────────────────────────────
 
@@ -46,6 +47,24 @@ const CREATOR_NAV_ITEMS = [
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+      </svg>
+    ),
+  },
+  {
+    label: "Messages",
+    href: "/dashboard/messages",
+    icon: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+      </svg>
+    ),
+  },
+  {
+    label: "Notifications",
+    href: "/dashboard/notifications",
+    icon: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
       </svg>
     ),
   },
@@ -98,6 +117,24 @@ const BRAND_NAV_ITEMS = [
     ),
   },
   {
+    label: "Messages",
+    href: "/dashboard/messages",
+    icon: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+      </svg>
+    ),
+  },
+  {
+    label: "Notifications",
+    href: "/dashboard/notifications",
+    icon: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+      </svg>
+    ),
+  },
+  {
     label: "Company Profile",
     href: "/dashboard/company",
     icon: (
@@ -121,9 +158,21 @@ const BOTTOM_ITEMS = [
   },
 ] as const;
 
-// ─── Notification Bell ──────────────────────────────────────
+// ─── Notification Bell (real data) ───────────────────────────
+interface BellNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  is_read: boolean;
+  link: string | null;
+  created_at: string;
+}
+
 function NotificationBell() {
   const [open, setOpen] = useState(false);
+  const [notifications, setNotifications] = useState<BellNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -134,6 +183,76 @@ function NotificationBell() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Fetch notifications
+  useEffect(() => {
+    const supabase = createClient();
+
+    async function fetchNotifications() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Get recent notifications (limit 5 for bell dropdown)
+      const { data: notifs } = await supabase
+        .from("notifications")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      if (notifs) {
+        setNotifications(notifs as BellNotification[]);
+      }
+
+      // Get unread count
+      const { count } = await supabase
+        .from("notifications")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("is_read", false);
+
+      setUnreadCount(count ?? 0);
+    }
+
+    fetchNotifications();
+
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  async function handleMarkRead(id: string) {
+    await markNotificationAsRead(id);
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
+    );
+    setUnreadCount((prev) => Math.max(0, prev - 1));
+  }
+
+  async function handleMarkAllRead() {
+    await markAllNotificationsAsRead();
+    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    setUnreadCount(0);
+  }
+
+  function timeAgo(dateStr: string) {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "Just now";
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  }
+
+  const typeColors: Record<string, string> = {
+    application_submitted: "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400",
+    application_reviewed: "bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400",
+    application_accepted: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400",
+    application_rejected: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400",
+    message_received: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400",
+  };
+
   return (
     <div className="relative" ref={ref}>
       <button
@@ -143,11 +262,12 @@ function NotificationBell() {
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
         </svg>
-        {/* Notification dot */}
-        <span className="absolute right-1.5 top-1.5 flex h-2.5 w-2.5">
-          <span className="animate-pulse-ring absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75" />
-          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-purple-500" />
-        </span>
+        {unreadCount > 0 && (
+          <span className="absolute right-1.5 top-1.5 flex h-2.5 w-2.5">
+            <span className="animate-pulse-ring absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-purple-500" />
+          </span>
+        )}
       </button>
 
       {/* Dropdown */}
@@ -155,30 +275,55 @@ function NotificationBell() {
         <div className="absolute right-0 top-full mt-2 w-80 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-xl z-50">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Notifications</h3>
-            <span className="rounded-full bg-purple-100 dark:bg-purple-900/30 px-2 py-0.5 text-[10px] font-bold text-purple-700 dark:text-purple-400">3 new</span>
+            <div className="flex items-center gap-2">
+              {unreadCount > 0 && (
+                <span className="rounded-full bg-purple-100 dark:bg-purple-900/30 px-2 py-0.5 text-[10px] font-bold text-purple-700 dark:text-purple-400">
+                  {unreadCount} new
+                </span>
+              )}
+              {notifications.length > 0 && (
+                <button
+                  onClick={handleMarkAllRead}
+                  className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition"
+                >
+                  Mark all read
+                </button>
+              )}
+            </div>
           </div>
           <div className="space-y-2">
-            {[
-              { title: "New opportunity matching your profile", time: "2 min ago", color: "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400" },
-              { title: "Your application was viewed by Nike", time: "1 hour ago", color: "bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400" },
-              { title: "Complete your profile to get matched", time: "3 hours ago", color: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400" },
-            ].map((n, i) => (
-              <div key={i} className="flex gap-3 rounded-xl p-3 transition hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer">
-                <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${n.color}`}>
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
-                  </svg>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{n.title}</p>
-                  <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-500">{n.time}</p>
-                </div>
-              </div>
-            ))}
+            {notifications.length === 0 ? (
+              <p className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">No notifications yet</p>
+            ) : (
+              notifications.map((n) => (
+                <button
+                  key={n.id}
+                  onClick={() => {
+                    if (!n.is_read) handleMarkRead(n.id);
+                  }}
+                  className={`flex w-full gap-3 rounded-xl p-3 transition hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer text-left ${
+                    !n.is_read ? "bg-purple-50/50 dark:bg-purple-900/10" : ""
+                  }`}
+                >
+                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${typeColors[n.type] || "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"}`}>
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                    </svg>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className={`text-sm font-medium truncate ${!n.is_read ? "text-gray-900 dark:text-gray-100" : "text-gray-600 dark:text-gray-400"}`}>
+                      {n.title}
+                    </p>
+                    <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-500 truncate">{n.message}</p>
+                    <p className="mt-0.5 text-[10px] text-gray-400 dark:text-gray-600">{timeAgo(n.created_at)}</p>
+                  </div>
+                </button>
+              ))
+            )}
           </div>
-          <button className="mt-3 w-full rounded-xl py-2 text-center text-xs font-semibold text-purple-600 dark:text-purple-400 transition hover:bg-purple-50 dark:hover:bg-purple-900/20">
+          <Link href="/dashboard/notifications" onClick={() => setOpen(false)} className="mt-3 block w-full rounded-xl py-2 text-center text-xs font-semibold text-purple-600 dark:text-purple-400 transition hover:bg-purple-50 dark:hover:bg-purple-900/20">
             View all notifications
-          </button>
+          </Link>
         </div>
       )}
     </div>

@@ -66,6 +66,14 @@ CREATE TYPE public.user_role AS ENUM (
   'brand'
 );
 
+CREATE TYPE public.notification_type AS ENUM (
+  'application_submitted',
+  'application_reviewed',
+  'application_accepted',
+  'application_rejected',
+  'message_received'
+);
+
 -- ============================================================
 -- 2. UTILITY — updated_at trigger
 -- ============================================================
@@ -271,6 +279,52 @@ CREATE TRIGGER set_applications_updated_at
   BEFORE UPDATE ON public.applications
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
+-- ──────────────────────────────────────────────
+-- 3g. NOTIFICATIONS
+-- ──────────────────────────────────────────────
+
+CREATE TABLE public.notifications (
+  id          uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id     uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  title       text NOT NULL,
+  message     text NOT NULL,
+  type        public.notification_type NOT NULL,
+  is_read     boolean DEFAULT false,
+  link        text,                            -- optional deep link (e.g. /dashboard/applications)
+  created_at  timestamptz DEFAULT now() NOT NULL
+);
+
+COMMENT ON TABLE public.notifications IS 'User notifications triggered by application and messaging events';
+
+-- ──────────────────────────────────────────────
+-- 3h. CONVERSATIONS
+-- ──────────────────────────────────────────────
+
+CREATE TABLE public.conversations (
+  id              uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  application_id  uuid NOT NULL REFERENCES public.applications(id) ON DELETE CASCADE,
+  creator_id      uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  brand_id        uuid NOT NULL REFERENCES public.brands(id) ON DELETE CASCADE,
+  created_at      timestamptz DEFAULT now() NOT NULL,
+  CONSTRAINT unique_conversation_per_application UNIQUE (application_id)
+);
+
+COMMENT ON TABLE public.conversations IS 'Chat conversations created when an application is accepted';
+
+-- ──────────────────────────────────────────────
+-- 3i. MESSAGES
+-- ──────────────────────────────────────────────
+
+CREATE TABLE public.messages (
+  id               uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  conversation_id  uuid NOT NULL REFERENCES public.conversations(id) ON DELETE CASCADE,
+  sender_id        uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  message          text NOT NULL CHECK (char_length(message) <= 5000),
+  created_at       timestamptz DEFAULT now() NOT NULL
+);
+
+COMMENT ON TABLE public.messages IS 'Individual chat messages within a conversation';
+
 -- ============================================================
 -- 4. INDEXES
 -- ============================================================
@@ -322,6 +376,23 @@ CREATE INDEX idx_applications_creator_id     ON public.applications (creator_id)
 CREATE INDEX idx_applications_status         ON public.applications (status);
 CREATE INDEX idx_applications_created        ON public.applications (created_at DESC);
 CREATE INDEX idx_applications_unique         ON public.applications (opportunity_id, creator_id);
+
+-- Notifications
+CREATE INDEX idx_notifications_user_id    ON public.notifications (user_id);
+CREATE INDEX idx_notifications_unread     ON public.notifications (user_id, is_read) WHERE is_read = false;
+CREATE INDEX idx_notifications_created    ON public.notifications (created_at DESC);
+CREATE INDEX idx_notifications_type       ON public.notifications (type);
+
+-- Conversations
+CREATE INDEX idx_conversations_creator_id ON public.conversations (creator_id);
+CREATE INDEX idx_conversations_brand_id   ON public.conversations (brand_id);
+CREATE INDEX idx_conversations_app_id     ON public.conversations (application_id);
+CREATE INDEX idx_conversations_created    ON public.conversations (created_at DESC);
+
+-- Messages
+CREATE INDEX idx_messages_conversation_id ON public.messages (conversation_id);
+CREATE INDEX idx_messages_sender_id       ON public.messages (sender_id);
+CREATE INDEX idx_messages_created         ON public.messages (created_at DESC);
 
 -- ============================================================
 -- 5. AUTO-INCREMENT applications_count TRIGGER
@@ -586,10 +657,120 @@ CREATE POLICY "applications_update_creator"
   USING (auth.uid() = creator_id)
   WITH CHECK (auth.uid() = creator_id);
 
+-- Brand owners can update application status for their opportunities
+CREATE POLICY "applications_update_brand"
+  ON public.applications FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.opportunities o
+      JOIN public.brands b ON b.id = o.brand_id
+      WHERE o.id = opportunity_id AND b.user_id = auth.uid()
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.opportunities o
+      JOIN public.brands b ON b.id = o.brand_id
+      WHERE o.id = opportunity_id AND b.user_id = auth.uid()
+    )
+  );
+
 -- Creators can delete (withdraw) their own applications
 CREATE POLICY "applications_delete_creator"
   ON public.applications FOR DELETE
   USING (auth.uid() = creator_id);
+
+-- ─── NOTIFICATIONS ─────────────────────────
+
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+
+-- Users can only read their own notifications
+CREATE POLICY "notifications_select_own"
+  ON public.notifications FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- Users can update (mark read) their own notifications
+CREATE POLICY "notifications_update_own"
+  ON public.notifications FOR UPDATE
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+-- Authenticated users can insert notifications (server actions create them)
+CREATE POLICY "notifications_insert_auth"
+  ON public.notifications FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+-- Users can delete their own notifications
+CREATE POLICY "notifications_delete_own"
+  ON public.notifications FOR DELETE
+  USING (auth.uid() = user_id);
+
+-- ─── CONVERSATIONS ─────────────────────────
+
+ALTER TABLE public.conversations ENABLE ROW LEVEL SECURITY;
+
+-- Creator sees conversations where they are the creator
+-- Brand user sees conversations where they own the brand
+CREATE POLICY "conversations_select"
+  ON public.conversations FOR SELECT
+  USING (
+    auth.uid() = creator_id
+    OR EXISTS (
+      SELECT 1 FROM public.brands b
+      WHERE b.id = brand_id AND b.user_id = auth.uid()
+    )
+  );
+
+-- Conversations are created by server actions (brand accepts application)
+CREATE POLICY "conversations_insert_auth"
+  ON public.conversations FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    auth.uid() = creator_id
+    OR EXISTS (
+      SELECT 1 FROM public.brands b
+      WHERE b.id = brand_id AND b.user_id = auth.uid()
+    )
+  );
+
+-- ─── MESSAGES ──────────────────────────────
+
+ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
+
+-- Users can read messages in conversations they belong to
+CREATE POLICY "messages_select"
+  ON public.messages FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.conversations c
+      WHERE c.id = conversation_id AND (
+        c.creator_id = auth.uid()
+        OR EXISTS (
+          SELECT 1 FROM public.brands b
+          WHERE b.id = c.brand_id AND b.user_id = auth.uid()
+        )
+      )
+    )
+  );
+
+-- Users in the conversation can send messages
+CREATE POLICY "messages_insert"
+  ON public.messages FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    auth.uid() = sender_id
+    AND EXISTS (
+      SELECT 1 FROM public.conversations c
+      WHERE c.id = conversation_id AND (
+        c.creator_id = auth.uid()
+        OR EXISTS (
+          SELECT 1 FROM public.brands b
+          WHERE b.id = c.brand_id AND b.user_id = auth.uid()
+        )
+      )
+    )
+  );
 
 -- ============================================================
 -- 8. HELPER VIEWS

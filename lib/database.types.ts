@@ -55,6 +55,13 @@ export type CompanySize = "startup" | "small" | "medium" | "large" | "enterprise
 
 export type UserRole = "creator" | "brand";
 
+export type NotificationType =
+  | "application_submitted"
+  | "application_reviewed"
+  | "application_accepted"
+  | "application_rejected"
+  | "message_received";
+
 // ─── Tables ─────────────────────────────────────────────────
 
 export interface Database {
@@ -455,6 +462,122 @@ export interface Database {
           },
         ];
       };
+
+      notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          message: string;
+          type: NotificationType;
+          is_read: boolean;
+          link: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          title: string;
+          message: string;
+          type: NotificationType;
+          is_read?: boolean;
+          link?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          title?: string;
+          message?: string;
+          type?: NotificationType;
+          is_read?: boolean;
+          link?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+
+      conversations: {
+        Row: {
+          id: string;
+          application_id: string;
+          creator_id: string;
+          brand_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          application_id: string;
+          creator_id: string;
+          brand_id: string;
+          created_at?: string;
+        };
+        Update: {};
+        Relationships: [
+          {
+            foreignKeyName: "conversations_application_id_fkey";
+            columns: ["application_id"];
+            isOneToOne: false;
+            referencedRelation: "applications";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "conversations_creator_id_fkey";
+            columns: ["creator_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "conversations_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+
+      messages: {
+        Row: {
+          id: string;
+          conversation_id: string;
+          sender_id: string;
+          message: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          conversation_id: string;
+          sender_id: string;
+          message: string;
+          created_at?: string;
+        };
+        Update: {
+          message?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "conversations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey";
+            columns: ["sender_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
 
     Views: {
@@ -537,6 +660,7 @@ export interface Database {
       location_type: LocationType;
       company_size: CompanySize;
       user_role: UserRole;
+      notification_type: NotificationType;
     };
   };
 }
@@ -547,3 +671,6 @@ export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type Brand = Database["public"]["Tables"]["brands"]["Row"];
 export type Opportunity = Database["public"]["Tables"]["opportunities"]["Row"];
 export type Application = Database["public"]["Tables"]["applications"]["Row"];
+export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
+export type Conversation = Database["public"]["Tables"]["conversations"]["Row"];
+export type Message = Database["public"]["Tables"]["messages"]["Row"];
