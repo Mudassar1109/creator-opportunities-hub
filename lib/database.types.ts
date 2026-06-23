@@ -549,6 +549,7 @@ export interface Database {
           conversation_id: string;
           sender_id: string;
           message: string;
+          is_read: boolean;
           created_at: string;
         };
         Insert: {
@@ -556,10 +557,12 @@ export interface Database {
           conversation_id: string;
           sender_id: string;
           message: string;
+          is_read?: boolean;
           created_at?: string;
         };
         Update: {
           message?: string;
+          is_read?: boolean;
         };
         Relationships: [
           {
@@ -649,6 +652,16 @@ export interface Database {
       opportunities_by_category: {
         Args: { cat_slug: string; limit_count?: number };
         Returns: Database["public"]["Views"]["opportunity_details"]["Row"][];
+      };
+      create_notification: {
+        Args: {
+          p_user_id: string;
+          p_title: string;
+          p_message: string;
+          p_type: Database["public"]["Enums"]["notification_type"];
+          p_link?: string | null;
+        };
+        Returns: string;
       };
     };
 

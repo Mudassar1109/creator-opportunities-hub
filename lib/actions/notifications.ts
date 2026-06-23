@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import type { NotificationType } from "@/lib/database.types";
 
 // ─── Internal helper: create a notification ─────────────────
+// Uses SECURITY DEFINER function to create notifications for other users
 export async function createNotification(
   userId: string,
   title: string,
@@ -15,12 +16,13 @@ export async function createNotification(
   try {
     const supabase = await createClient();
 
-    const { error } = await supabase.from("notifications").insert({
-      user_id: userId,
-      title,
-      message,
-      type,
-      link: link || null,
+    // Use SECURITY DEFINER function to bypass RLS (allows notifying other users)
+    const { error } = await supabase.rpc("create_notification", {
+      p_user_id: userId,
+      p_title: title,
+      p_message: message,
+      p_type: type,
+      p_link: link || null,
     });
 
     if (error) {

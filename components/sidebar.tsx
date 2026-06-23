@@ -19,6 +19,8 @@ import type { User } from "@supabase/supabase-js";
 import type { UserRole } from "@/lib/database.types";
 import { ThemeToggle } from "./theme-provider";
 import { markNotificationAsRead, markAllNotificationsAsRead } from "@/lib/actions/notifications";
+import { getUnreadMessageCount } from "@/lib/utils/messages";
+import { getApplicationBadgeCount } from "@/lib/utils/applications";
 
 // ─── Nav items ──────────────────────────────────────────────
 
@@ -409,6 +411,8 @@ export function Sidebar() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<UserRole>("creator");
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
+  const [applicationBadgeCount, setApplicationBadgeCount] = useState(0);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -446,6 +450,81 @@ export function Sidebar() {
     });
     return () => subscription.unsubscribe();
   }, []);
+
+  // Load unread message count
+  useEffect(() => {
+    if (!user) return;
+
+    const userId = user.id;
+
+    async function loadUnreadCount() {
+      const count = await getUnreadMessageCount(userId);
+      setUnreadMessageCount(count);
+    }
+
+    loadUnreadCount();
+
+    // Set up realtime subscription for message changes
+    const supabase = createClient();
+    const channel = supabase
+      .channel("sidebar-messages-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "messages",
+        },
+        async () => {
+          // Reload unread count when messages change
+          const count = await getUnreadMessageCount(userId);
+          setUnreadMessageCount(count);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  // Load application badge count
+  useEffect(() => {
+    if (!user || !userRole) return;
+
+    const userId = user.id;
+    const role = userRole;
+
+    async function loadAppBadgeCount() {
+      const count = await getApplicationBadgeCount(userId, role);
+      setApplicationBadgeCount(count);
+    }
+
+    loadAppBadgeCount();
+
+    // Set up realtime subscription for application changes
+    const supabase = createClient();
+    const channel = supabase
+      .channel("sidebar-applications-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "applications",
+        },
+        async () => {
+          // Reload application badge count when applications change
+          const count = await getApplicationBadgeCount(userId, role);
+          setApplicationBadgeCount(count);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, userRole]);
 
   useEffect(() => {
     setMobileOpen(false);
@@ -507,6 +586,10 @@ export function Sidebar() {
           <ul className="space-y-1">
             {(userRole === "brand" ? BRAND_NAV_ITEMS : CREATOR_NAV_ITEMS).map((item) => {
               const active = isActive(item.href);
+              const isMessages = item.label === "Messages";
+              const isApplications = item.label === "Applications";
+              const badgeCount = isMessages ? unreadMessageCount : isApplications ? applicationBadgeCount : 0;
+
               return (
                 <li key={item.label}>
                   <Link
@@ -522,7 +605,14 @@ export function Sidebar() {
                       {item.icon}
                     </span>
                     {(!collapsed || mobileOpen) && (
-                      <span className="truncate">{item.label}</span>
+                      <span className="flex items-center gap-2">
+                        <span className="truncate">{item.label}</span>
+                        {badgeCount > 0 && (
+                          <span className="flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
+                            {badgeCount > 99 ? "99+" : badgeCount}
+                          </span>
+                        )}
+                      </span>
                     )}
                   </Link>
                 </li>

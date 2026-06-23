@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getUserWithRole } from "@/lib/supabase/server";
+import { getUserWithRole, getSession } from "@/lib/supabase/server";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { ChatInterface } from "./chat-client";
 
@@ -15,6 +15,7 @@ export default async function MessagesPage() {
   if (!result) redirect("/login");
 
   const { user } = result;
+  const session = await getSession();
 
   return (
     <DashboardLayout>
@@ -25,7 +26,7 @@ export default async function MessagesPage() {
             Communicate with brands and creators about accepted applications.
           </p>
         </div>
-        <ChatInterface userId={user.id} />
+        <ChatInterface userId={user.id} session={session} />
       </div>
     </DashboardLayout>
   );

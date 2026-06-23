@@ -303,7 +303,7 @@ COMMENT ON TABLE public.notifications IS 'User notifications triggered by applic
 CREATE TABLE public.conversations (
   id              uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   application_id  uuid NOT NULL REFERENCES public.applications(id) ON DELETE CASCADE,
-  creator_id      uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  creator_id      uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   brand_id        uuid NOT NULL REFERENCES public.brands(id) ON DELETE CASCADE,
   created_at      timestamptz DEFAULT now() NOT NULL,
   CONSTRAINT unique_conversation_per_application UNIQUE (application_id)
@@ -684,6 +684,40 @@ CREATE POLICY "applications_delete_creator"
 
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
+-- SECURITY DEFINER function for creating notifications for other users
+-- This allows server actions to notify users about application status changes
+-- while bypassing RLS that would otherwise block cross-user inserts
+CREATE OR REPLACE FUNCTION public.create_notification(
+  p_user_id uuid,
+  p_title text,
+  p_message text,
+  p_type public.notification_type,
+  p_link text DEFAULT NULL
+)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_notification_id uuid;
+BEGIN
+  -- Validate caller is authenticated
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  -- Insert notification with elevated privileges (bypasses RLS)
+  INSERT INTO public.notifications (user_id, title, message, type, link)
+  VALUES (p_user_id, p_title, p_message, p_type, p_link)
+  RETURNING id INTO v_notification_id;
+
+  RETURN v_notification_id;
+END;
+$$;
+
+COMMENT ON FUNCTION public.create_notification IS 'SECURITY DEFINER function to create notifications for any authenticated user. Used by server actions to notify other users.';
+
 -- Users can only read their own notifications
 CREATE POLICY "notifications_select_own"
   ON public.notifications FOR SELECT
@@ -695,11 +729,9 @@ CREATE POLICY "notifications_update_own"
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
--- Authenticated users can insert notifications (server actions create them)
-CREATE POLICY "notifications_insert_auth"
-  ON public.notifications FOR INSERT
-  TO authenticated
-  WITH CHECK (auth.uid() = user_id);
+-- NOTE: Direct INSERT policy removed - use create_notification() function instead
+-- This enforces that notifications can only be created via the SECURITY DEFINER function
+-- which validates authentication and allows cross-user notification delivery
 
 -- Users can delete their own notifications
 CREATE POLICY "notifications_delete_own"

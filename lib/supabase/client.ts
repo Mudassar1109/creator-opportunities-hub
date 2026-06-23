@@ -31,5 +31,10 @@ export function createClient() {
 
   return createBrowserClient<Database>(url, key, {
     isSingleton: true,
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: false,
+    },
   });
 }

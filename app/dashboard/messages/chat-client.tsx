@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { sendMessage } from "@/lib/actions/messages";
+import { markConversationRead } from "@/lib/utils/messages";
 import type { User } from "@supabase/supabase-js";
+
+type RealtimeStatus = "connecting" | "connected" | "disconnected";
 
 interface ConversationData {
   id: string;
@@ -23,18 +25,42 @@ interface MessageData {
   conversation_id: string;
   sender_id: string;
   message: string;
+  is_read: boolean;
   created_at: string;
 }
 
-export function ChatInterface({ userId }: { userId: string }) {
+export function ChatInterface({ userId, session: initialSession }: { userId: string; session: any | null }) {
   const [conversations, setConversations] = useState<ConversationData[]>([]);
   const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
   const [messages, setMessages] = useState<MessageData[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("disconnected");
+  const [session, setSession] = useState<any>(initialSession);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const supabase = createClient();
+const supabaseRef = useRef(createClient());
+const supabase = supabaseRef.current;
+  // Check session on mount
+  useEffect(() => {
+    console.log("[Chat] Initial session from server:", initialSession ? "EXISTS" : "NULL");
+    console.log("[Chat] Checking session for user:", userId);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("[Chat] Session retrieved from client:", session ? "EXISTS" : "NULL");
+      setSession(session);
+      if (!session) {
+        console.error("[Chat] No session found - realtime will not work");
+      }
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log("[Chat] Auth state changed:", _event, session ? "HAS SESSION" : "NO SESSION");
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [userId, supabase, initialSession]);
 
   // Load conversations
   useEffect(() => {
@@ -137,12 +163,22 @@ export function ChatInterface({ userId }: { userId: string }) {
     }
 
     loadConversations();
-  }, [userId, supabase]);
-
+}, [userId]);
   // Load messages when conversation selected
   useEffect(() => {
     if (!selectedConvId) return;
     const convId = selectedConvId;
+
+    console.log("[Chat] Setting up conversation:", convId);
+    console.log("[Chat] Current session:", session ? "EXISTS" : "NULL");
+    console.log("[Chat] User ID:", userId);
+    setRealtimeStatus("connecting");
+
+    if (!session) {
+      console.error("[Chat] Cannot subscribe - no session");
+      setRealtimeStatus("disconnected");
+      return;
+    }
 
     async function loadMessages() {
       const { data } = await supabase
@@ -151,11 +187,72 @@ export function ChatInterface({ userId }: { userId: string }) {
         .eq("conversation_id", convId)
         .order("created_at", { ascending: true });
 
+      console.log("[Chat] Loaded messages:", data?.length ?? 0);
       setMessages((data as MessageData[]) ?? []);
+
+      // Mark conversation as read
+      await markConversationRead(convId);
     }
 
     loadMessages();
-  }, [selectedConvId, supabase]);
+
+    // Set up realtime subscription for new messages in this conversation
+    console.log("[Chat] Creating realtime channel for conversation:", convId);
+    console.log("[Chat] Filter will be:", `conversation_id=eq.${convId}`);
+    const channel = supabase
+      .channel(`conversation-${convId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${convId}`,
+        },
+        (payload) => {
+          console.log("[Chat] Realtime: New message received:", payload);
+          console.log("[Chat] Payload new:", payload.new);
+          const newMessage = payload.new as MessageData;
+          console.log("[Chat] About to update messages state with:", newMessage);
+          setMessages((prev) => {
+            // Prevent duplicate messages
+            if (prev.some((m) => m.id === newMessage.id)) {
+              console.log("[Chat] Duplicate message prevented:", newMessage.id);
+              return prev;
+            }
+            console.log("[Chat] Adding new message to state:", newMessage.id);
+            return [...prev, newMessage];
+          });
+        }
+      )
+      .subscribe((status, err) => {
+        console.log("[Chat] Realtime subscription status:", status);
+        if (err) {
+          console.error("[Chat] Realtime subscription error:", err);
+        }
+        if (status === "SUBSCRIBED") {
+          console.log("[Chat] Successfully subscribed to realtime");
+          setRealtimeStatus("connected");
+        } else if (status === "CLOSED" || status === "CHANNEL_ERROR") {
+          console.log("[Chat] Realtime subscription closed or errored");
+          setRealtimeStatus("disconnected");
+        } else if (status === "TIMED_OUT") {
+          console.log("[Chat] Realtime subscription timed out");
+          setRealtimeStatus("disconnected");
+        } else if (status === "JOIN_ERROR") {
+          console.log("[Chat] Realtime join error");
+          setRealtimeStatus("disconnected");
+        }
+      });
+
+    console.log("[Chat] Subscription initiated, channel state:", channel.state);
+
+    return () => {
+      console.log("[Chat] Cleaning up subscription for conversation:", convId);
+      supabase.removeChannel(channel);
+      setRealtimeStatus("disconnected");
+    };
+  }, [selectedConvId, session, userId]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -169,22 +266,23 @@ export function ChatInterface({ userId }: { userId: string }) {
     const msg = newMessage.trim();
     setNewMessage("");
 
-    // Optimistic update
-    const optimisticMsg: MessageData = {
-      id: `temp-${Date.now()}`,
-      conversation_id: selectedConvId,
-      sender_id: userId,
-      message: msg,
-      created_at: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, optimisticMsg]);
+    console.log("[Chat] Sending message via client:", { conversationId: selectedConvId, message: msg });
 
-    const result = await sendMessage(selectedConvId, msg);
-    if (!result.success) {
-      console.log("[Chat] Send failed:", result.error);
-      // Remove optimistic message on failure
-      setMessages((prev) => prev.filter((m) => m.id !== optimisticMsg.id));
-      setNewMessage(msg); // restore input
+    // Insert directly via client to ensure realtime propagation
+    const { error } = await supabase
+      .from("messages")
+      .insert({
+        conversation_id: selectedConvId,
+        sender_id: userId,
+        message: msg,
+        is_read: false,
+      });
+
+    if (error) {
+      console.error("[Chat] Send failed:", error);
+      setNewMessage(msg); // restore input on error
+    } else {
+      console.log("[Chat] Message sent successfully, realtime should deliver it");
     }
 
     setSending(false);
@@ -299,6 +397,16 @@ export function ChatInterface({ userId }: { userId: string }) {
                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                   {selectedConv?.opportunity_title}
                 </p>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className={`h-2 w-2 rounded-full ${
+                  realtimeStatus === "connected" ? "bg-green-500" :
+                  realtimeStatus === "connecting" ? "bg-yellow-500 animate-pulse" :
+                  "bg-red-500"
+                }`} />
+                <span className="text-[10px] text-gray-400 dark:text-gray-600 capitalize">
+                  {realtimeStatus}
+                </span>
               </div>
             </div>
 
