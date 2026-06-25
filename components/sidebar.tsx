@@ -17,7 +17,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import type { UserRole } from "@/lib/database.types";
-import { ThemeToggle } from "./theme-provider";
+import { ThemeToggle } from "./theme-toggle";
 import { markNotificationAsRead, markAllNotificationsAsRead } from "@/lib/actions/notifications";
 import { getUnreadMessageCount } from "@/lib/utils/messages";
 import { getApplicationBadgeCount } from "@/lib/utils/applications";

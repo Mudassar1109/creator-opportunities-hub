@@ -16,7 +16,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import type { Profile } from "@/lib/database.types";
-import { useTheme } from "@/components/theme-provider";
+import { useTheme } from "next-themes";
 
 interface Props {
   user: User;
