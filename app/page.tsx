@@ -1,735 +1,808 @@
-// app/page.tsx — Creator Opportunities Hub
-// Production-ready landing page with all 10 sections
-
+// app/page.tsx — CreatorHub 2026 Premium Homepage
+import { Suspense } from "react";
 import { Navbar } from "@/components/navbar";
 import { OpportunityCard } from "@/components/opportunity-card";
-import { createClient } from "@/lib/supabase/server";
+import { AnimatedCounter } from "@/components/animated-counter";
+import { NewsletterForm } from "@/components/newsletter-form";
+import { HeroSearch } from "@/components/home/hero-search";
+import { DashboardPreview } from "@/components/home/dashboard-preview";
+import { LiveActivity } from "@/components/home/live-activity";
+import { FeaturedBrands } from "@/components/home/featured-brands";
+import { TopCreators } from "@/components/home/top-creators";
+import { CategoriesBento } from "@/components/home/categories-bento";
+import { TrustBar } from "@/components/home/trust-bar";
+import { MouseGlow } from "@/components/home/mouse-glow";
+import {
+  OpportunityGridSkeleton,
+  BrandGridSkeleton,
+  CreatorGridSkeleton,
+  ActivitySkeleton,
+  CategoryGridSkeleton,
+} from "@/components/home/skeletons";
+import {
+  getHomepageStats,
+  getFeaturedOpportunities,
+  getLatestOpportunities,
+  getCategoriesWithCounts,
+  getFeaturedBrands,
+  getTopCreators,
+  getLiveActivity,
+} from "@/lib/actions/homepage";
 import Link from "next/link";
 
-/* ─── Data ─── */
+export const dynamic = "force-dynamic";
 
-const STATS = [
-  { value: "12,400+", label: "Active Opportunities" },
-  { value: "85,000+", label: "Registered Creators" },
-  { value: "3,200+", label: "Brands" },
-  { value: "48,000+", label: "Monthly Applications" },
-] as const;
+export const metadata = {
+  title: "Creator Opportunities Hub | Brand Deals, Sponsorships & Creator Jobs",
+  description:
+    "The premium marketplace where brands post sponsorships, brand deals, and UGC jobs — and creators apply in one click. Join thousands of creators earning from content.",
+  keywords: [
+    "creator opportunities", "brand deals", "sponsorships", "UGC jobs",
+    "creator marketplace", "influencer marketing", "affiliate programs",
+    "creator jobs", "paid collaborations", "ambassador programs",
+  ],
+  openGraph: {
+    title: "Creator Opportunities Hub | Brand Deals, Sponsorships & Creator Jobs",
+    description: "The marketplace where brands and creators connect. Browse live opportunities and apply instantly.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Creator Opportunities Hub | Brand Deals & Creator Jobs",
+    description: "The marketplace where brands and creators connect.",
+  },
+};
 
-const OPPORTUNITIES = [
-  {
-    company: "Nike",
-    type: "Sponsorship",
-    budget: "$5,000 – $25,000",
-    category: "Fitness & Lifestyle",
-    badge: "Featured",
-  },
-  {
-    company: "Adobe",
-    type: "Brand Deal",
-    budget: "$2,000 – $15,000",
-    category: "Software & Tech",
-    badge: "New",
-  },
-  {
-    company: "Gymshark",
-    type: "Ambassador Program",
-    budget: "$1,000 – $8,000/mo",
-    category: "Fitness",
-    badge: "Hot",
-  },
-  {
-    company: "Skillshare",
-    type: "Affiliate Program",
-    budget: "30% Commission",
-    category: "Education",
-    badge: "Evergreen",
-  },
-  {
-    company: "Samsung",
-    type: "UGC Opportunity",
-    budget: "$3,000 – $12,000",
-    category: "Technology",
-    badge: "Featured",
-  },
-  {
-    company: "Fiverr",
-    type: "Creator Job",
-    budget: "$500 – $5,000",
-    category: "Freelance & Services",
-    badge: "Remote",
-  },
-] as const;
-
-const CATEGORIES = [
-  {
-    name: "Brand Deals",
-    count: "2,400+",
-    icon: "🤝",
-    gradient: "from-purple-500 to-purple-600",
-  },
-  {
-    name: "Affiliate Programs",
-    count: "1,800+",
-    icon: "🔗",
-    gradient: "from-purple-500 to-purple-600",
-  },
-  {
-    name: "Sponsorships",
-    count: "3,100+",
-    icon: "🎯",
-    gradient: "from-purple-600 to-cyan-500",
-  },
-  {
-    name: "UGC Jobs",
-    count: "980+",
-    icon: "🎬",
-    gradient: "from-pink-500 to-pink-600",
-  },
-  {
-    name: "Creator Jobs",
-    count: "1,500+",
-    icon: "💼",
-    gradient: "from-emerald-500 to-emerald-600",
-  },
-  {
-    name: "Collaborations",
-    count: "760+",
-    icon: "🤜",
-    gradient: "from-amber-500 to-amber-600",
-  },
-  {
-    name: "Ambassador Programs",
-    count: "540+",
-    icon: "⭐",
-    gradient: "from-rose-500 to-rose-600",
-  },
-  {
-    name: "Remote Work",
-    count: "2,200+",
-    icon: "🌍",
-    gradient: "from-cyan-500 to-cyan-600",
-  },
-] as const;
-
-const STEPS = [
-  {
-    step: "01",
-    title: "Create Profile",
-    description:
-      "Sign up and build your creator profile showcasing your niche, audience size, platforms, and past work.",
-  },
-  {
-    step: "02",
-    title: "Find Opportunities",
-    description:
-      "Browse curated brand deals, sponsorships, affiliate programs, and creator jobs matched to your niche.",
-  },
-  {
-    step: "03",
-    title: "Apply Instantly",
-    description:
-      "Submit applications with one click. Track all your applications in a single dashboard.",
-  },
-  {
-    step: "04",
-    title: "Get Paid",
-    description:
-      "Land deals, create content, and get paid directly through our secure platform. No middlemen.",
-  },
-] as const;
-
-const TESTIMONIALS = [
-  {
-    name: "Sarah Chen",
-    handle: "@sarahcreates",
-    platform: "YouTube · 420K subscribers",
-    quote:
-      "I landed 3 brand deals in my first month. The quality of opportunities here is unmatched — real brands, real budgets, real results.",
-    avatar: "SC",
-  },
-  {
-    name: "Marcus Rivera",
-    handle: "@marcusrivera",
-    platform: "TikTok · 1.2M followers",
-    quote:
-      "This platform changed how I approach sponsorships. The ambassador program I found here now pays me $4k/month on autopilot.",
-    avatar: "MR",
-  },
-  {
-    name: "Priya Sharma",
-    handle: "@priyasharma",
-    platform: "Instagram · 280K followers",
-    quote:
-      "As a micro-influencer I always struggled to find legit opportunities. Within 2 weeks I had my first paid UGC deal. Life changing.",
-    avatar: "PS",
-  },
-] as const;
-
-const COUNTRIES = [
-  "United States",
-  "United Kingdom",
-  "Canada",
-  "Australia",
-  "Germany",
-  "France",
-  "India",
-  "Brazil",
-  "Japan",
-  "UAE",
-  "Singapore",
-  "Netherlands",
-] as const;
-
-const CATEGORY_FILTER_OPTIONS = [
-  "All Categories",
-  "Brand Deals",
-  "Affiliate Programs",
-  "Sponsorships",
-  "UGC Jobs",
-  "Creator Jobs",
-  "Collaborations",
-  "Ambassador Programs",
-  "Remote Work",
-] as const;
-
-/* ─── Helpers ─── */
-function BadgeColor(badge: string) {
-  switch (badge) {
-    case "Featured":
-      return "bg-purple-100 text-purple-700";
-    case "New":
-      return "bg-emerald-100 text-emerald-700";
-    case "Hot":
-      return "bg-orange-100 text-orange-700";
-    case "Evergreen":
-      return "bg-purple-100 text-purple-700";
-    case "Remote":
-      return "bg-cyan-100 text-cyan-700";
-    default:
-      return "bg-gray-100 text-gray-700";
-  }
-}
-
-/* ─── Page Component ─── */
 export default async function HomePage() {
-  const supabase = await createClient();
-
-  // Fetch featured opportunities from DB
-  const { data: featuredOpps } = await supabase
-    .from("featured_opportunities")
-    .select("*")
-    .eq("status", "active")
-    .order("is_featured", { ascending: false })
-    .order("published_at", { ascending: false })
-    .limit(6);
-
-  // Fetch categories
-  const { data: dbCategories } = await supabase
-    .from("categories")
-    .select("name, slug")
-    .eq("is_active", true)
-    .order("sort_order");
-
-  const opportunities = featuredOpps ?? [];
-  const hasOpportunities = opportunities.length > 0;
+  const [
+    stats,
+    featuredOpps,
+    latestOpps,
+    categories,
+    featuredBrands,
+    topCreators,
+    activity,
+  ] = await Promise.all([
+    getHomepageStats(),
+    getFeaturedOpportunities(),
+    getLatestOpportunities(),
+    getCategoriesWithCounts(),
+    getFeaturedBrands(),
+    getTopCreators(),
+    getLiveActivity(),
+  ]);
 
   return (
-    <main id="home" className="flex-1 bg-white text-gray-900">
-      {/* ═══════════════════════════════════════════
-          1 · STICKY NAVBAR
-      ═══════════════════════════════════════════ */}
-      <Navbar />
+    <>
+      {/* Mouse glow — client-only, zero layout impact */}
+      <MouseGlow />
 
-      {/* ═══════════════════════════════════════════
-          2 · HERO SECTION
-      ═══════════════════════════════════════════ */}
-      <section className="relative overflow-hidden pb-20 pt-24 sm:pb-28 sm:pt-32 lg:pb-36 lg:pt-40">
-        {/* Decorative blobs */}
-        <div className="pointer-events-none absolute -top-32 left-1/2 h-[600px] w-[900px] -translate-x-1/2 rounded-full bg-gradient-to-br from-purple-100/60 via-purple-100/40 to-cyan-100/60 blur-3xl" />
-        <div className="pointer-events-none absolute -left-40 top-20 h-72 w-72 rounded-full bg-purple-200/30 blur-3xl" />
-        <div className="pointer-events-none absolute -right-40 top-40 h-72 w-72 rounded-full bg-cyan-200/30 blur-3xl" />
+      <main className="flex-1 bg-white text-gray-900">
+        <Navbar />
 
-        <div className="relative mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
-          {/* Pill badge */}
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-purple-200 bg-purple-50 px-4 py-1.5 text-xs font-semibold text-purple-700 sm:text-sm">
-            <span className="h-1.5 w-1.5 rounded-full bg-purple-500" />
-            Trusted by 85,000+ creators worldwide
-          </div>
+        {/* ══════════════════════════════════════════════════════
+            HERO — Aurora + Dashboard preview + 5-second clarity
+        ══════════════════════════════════════════════════════ */}
+        <section
+          className="aurora-bg relative overflow-hidden pb-24 pt-20 sm:pb-32 sm:pt-28 lg:pb-40 lg:pt-36"
+          aria-label="Hero"
+        >
+          {/* Noise texture for depth */}
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.025]"
+            style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")" }}
+            aria-hidden="true"
+          />
 
-          <h1 className="mx-auto max-w-4xl text-4xl font-extrabold leading-tight tracking-tight text-gray-900 sm:text-5xl md:text-6xl lg:text-7xl">
-            Find Your Next{" "}
-            <span className="bg-gradient-to-r from-purple-600 via-purple-500 to-cyan-500 bg-clip-text text-transparent">
-              Creator Opportunity
-            </span>
-          </h1>
+          {/* Floating orbs */}
+          <div className="animate-float-slow pointer-events-none absolute -left-40 top-10 h-[500px] w-[500px] rounded-full bg-purple-500/15 blur-3xl" aria-hidden="true" />
+          <div className="animate-float-medium pointer-events-none absolute -right-32 top-20 h-96 w-96 rounded-full bg-cyan-400/20 blur-3xl" aria-hidden="true" />
+          <div className="animate-float-fast pointer-events-none absolute bottom-0 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-indigo-400/15 blur-3xl" aria-hidden="true" />
 
-          <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-gray-500 sm:text-lg md:text-xl">
-            Discover sponsorships, affiliate programs, brand deals, collaborations
-            and creator jobs from companies worldwide.
-          </p>
+          <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="grid gap-12 lg:grid-cols-2 lg:items-center lg:gap-20">
 
-          <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <a
-              href="/opportunities"
-              className="w-full rounded-2xl bg-gradient-to-r from-purple-600 to-cyan-500 px-8 py-4 text-base font-bold text-white shadow-xl shadow-purple-500/25 transition-all duration-200 hover:shadow-2xl hover:shadow-purple-500/30 hover:-translate-y-0.5 sm:w-auto sm:text-lg"
-            >
-              Explore Opportunities
-            </a>
-            <a
-              href="/dashboard/opportunities/new"
-              className="w-full rounded-2xl border-2 border-gray-200 bg-white px-8 py-4 text-base font-bold text-gray-800 shadow-sm transition hover:border-gray-300 hover:shadow-md sm:w-auto sm:text-lg"
-            >
-              Post Opportunity
-            </a>
-          </div>
+              {/* ── Left column: value prop ── */}
+              <div className="text-center lg:text-left">
 
-          {/* Trust logos */}
-          <p className="mt-14 text-xs font-medium uppercase tracking-widest text-gray-400">
-            Featured by brands like
-          </p>
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm font-semibold text-gray-300">
-            {["Nike", "Adobe", "Samsung", "Gymshark", "Skillshare", "Fiverr"].map((b) => (
-              <span key={b} className="text-gray-300 transition hover:text-gray-500">{b}</span>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════════
-          3 · SEARCH SECTION
-      ═══════════════════════════════════════════ */}
-      <section className="relative -mt-8 px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-5xl rounded-3xl border border-gray-100 bg-white p-4 shadow-xl shadow-gray-200/60 sm:p-6">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {/* Keyword */}
-            <div className="relative lg:col-span-1">
-              <label htmlFor="keyword" className="sr-only">Search keyword</label>
-              <svg
-                className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
-                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
-              </svg>
-              <input
-                id="keyword"
-                type="text"
-                placeholder="Search opportunities…"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 py-3 pl-11 pr-4 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-purple-500 focus:bg-white focus:ring-2 focus:ring-purple-500/20"
-              />
-            </div>
-
-            {/* Category */}
-            <div>
-              <label htmlFor="category" className="sr-only">Category</label>
-              <select
-                id="category"
-                className="w-full appearance-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700 outline-none transition focus:border-purple-500 focus:bg-white focus:ring-2 focus:ring-purple-500/20"
-                defaultValue="All Categories"
-              >
-                {CATEGORY_FILTER_OPTIONS.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Country */}
-            <div>
-              <label htmlFor="country" className="sr-only">Country</label>
-              <select
-                id="country"
-                className="w-full appearance-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700 outline-none transition focus:border-purple-500 focus:bg-white focus:ring-2 focus:ring-purple-500/20"
-                defaultValue="All Countries"
-              >
-                <option>All Countries</option>
-                {COUNTRIES.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Search Button */}
-            <button
-              type="button"
-              className="rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-purple-500/25 transition-all duration-200 hover:shadow-xl hover:shadow-purple-500/30"
-            >
-              Search
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════════
-          4 · STATISTICS SECTION
-      ═══════════════════════════════════════════ */}
-      <section className="px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid grid-cols-2 gap-6 sm:gap-8 lg:grid-cols-4">
-            {STATS.map((stat) => (
-              <div
-                key={stat.label}
-                className="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-sm transition-all duration-300 hover:border-purple-200/50 hover:shadow-lg sm:p-8"
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-50/0 via-purple-50/0 to-cyan-50/0 transition group-hover:from-purple-50/80 group-hover:via-purple-50/60 group-hover:to-cyan-50/80" />
-                <div className="relative">
-                  <p className="bg-gradient-to-r from-purple-600 to-cyan-500 bg-clip-text text-3xl font-extrabold text-transparent sm:text-4xl lg:text-5xl">
-                    {stat.value}
-                  </p>
-                  <p className="mt-2 text-sm font-medium text-gray-500">{stat.label}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════════
-          5 · FEATURED OPPORTUNITIES
-      ═══════════════════════════════════════════ */}
-      <section id="opportunities" className="bg-gray-50/60 px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="mx-auto mb-14 max-w-2xl text-center">
-            <span className="mb-3 inline-block rounded-full bg-purple-100 px-4 py-1 text-xs font-bold uppercase tracking-wider text-purple-700">
-              Featured
-            </span>
-            <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-              Featured Opportunities
-            </h2>
-            <p className="mt-3 text-base text-gray-500 sm:text-lg">
-              Hand-picked brand deals and creator jobs from top companies.
-            </p>
-          </div>
-
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {hasOpportunities ? (
-              opportunities.map((opp) => (
-                <OpportunityCard
-                  key={opp.id}
-                  id={opp.id}
-                  title={opp.title}
-                  slug={opp.slug}
-                  brand_name={opp.brand_name}
-                  brand_logo={opp.brand_logo}
-                  brand_verified={opp.brand_verified}
-                  opportunity_type={opp.opportunity_type}
-                  budget_min={opp.budget_min}
-                  budget_max={opp.budget_max}
-                  budget_type={opp.budget_type}
-                  currency={opp.currency}
-                  country={opp.country}
-                  deadline={(opp as unknown as { deadline?: string }).deadline}
-                  is_featured={opp.is_featured}
-                  category_names={opp.category_names}
-                  applications_count={opp.applications_count}
-                />
-              ))
-            ) : (
-              OPPORTUNITIES.map((opp) => (
-                <article
-                  key={opp.company}
-                  className="group relative flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-300 hover:border-purple-200/50 hover:shadow-xl"
-                >
-                  <span className={`mb-4 inline-flex w-fit rounded-lg px-3 py-1 text-xs font-bold ${BadgeColor(opp.badge)}`}>
-                    {opp.badge}
+                {/* Live platform badge */}
+                <div className="animate-fade-up mb-6 inline-flex items-center gap-2.5 rounded-full border border-white/20 bg-white/10 px-4 py-2 backdrop-blur-md">
+                  <span className="animate-live-pulse h-2 w-2 rounded-full bg-emerald-400" aria-hidden="true" />
+                  <span className="text-xs font-semibold text-white/90">
+                    <AnimatedCounter value={stats.totalCreators} suffix="+" className="font-bold text-white" />
+                    {" creators · "}
+                    <AnimatedCounter value={stats.publishedOpportunities} suffix="+" className="font-bold text-white" />
+                    {" live deals"}
                   </span>
-                  <h3 className="text-xl font-bold text-gray-900">{opp.company}</h3>
-                  <p className="mt-1 text-sm font-semibold text-purple-600">{opp.type}</p>
-                  <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-4">
-                    <div>
-                      <p className="text-xs font-medium uppercase tracking-wider text-gray-400">Budget</p>
-                      <p className="mt-0.5 text-sm font-bold text-gray-900">{opp.budget}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs font-medium uppercase tracking-wider text-gray-400">Category</p>
-                      <p className="mt-0.5 text-sm font-medium text-gray-600">{opp.category}</p>
-                    </div>
-                  </div>
+                </div>
+
+                {/* H1 — answers: What is it? */}
+                <h1 className="animate-fade-up animate-fade-up-delay-1 text-4xl font-extrabold leading-[1.1] tracking-tight text-white sm:text-5xl lg:text-[3.75rem] xl:text-7xl">
+                  The Marketplace for{" "}
+                  <span className="gradient-text-animated">Creator Deals</span>
+                </h1>
+
+                {/* Subhead — answers: Who? Why different? */}
+                <p className="animate-fade-up animate-fade-up-delay-2 mx-auto mt-5 max-w-xl text-base leading-relaxed text-white/75 sm:text-lg lg:mx-0">
+                  Brands post sponsorships, UGC jobs and brand deals. Creators
+                  apply in one click. Every opportunity is real, verified, and
+                  paid — no DMs, no middlemen.
+                </p>
+
+                {/* Dual audience pills */}
+                <div className="animate-fade-up animate-fade-up-delay-2 mt-6 flex flex-wrap justify-center gap-3 lg:justify-start">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-white/90 backdrop-blur-sm">
+                    <svg className="h-3.5 w-3.5 text-emerald-400" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    For Creators — find paid deals
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-white/90 backdrop-blur-sm">
+                    <svg className="h-3.5 w-3.5 text-cyan-400" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    For Brands — reach creators fast
+                  </span>
+                </div>
+
+                {/* CTAs */}
+                <div className="animate-fade-up animate-fade-up-delay-3 mt-8 flex flex-col items-center gap-3 sm:flex-row lg:justify-start">
                   <Link
                     href="/opportunities"
-                    className="mt-6 block rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 py-3 text-center text-sm font-bold text-white shadow-md shadow-purple-500/20 transition-all duration-200 group-hover:shadow-lg group-hover:shadow-purple-500/30"
+                    className="group inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-8 py-4 text-sm font-bold text-purple-700 shadow-xl shadow-black/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-black/25 sm:w-auto sm:text-base focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-purple-700"
                   >
-                    Apply Now
-                  </Link>
-                </article>
-              ))
-            )}
-          </div>
-
-          <div className="mt-12 text-center">
-            <Link
-              href="/opportunities"
-              className="inline-flex items-center gap-2 rounded-2xl border-2 border-gray-200 bg-white px-8 py-3.5 text-sm font-bold text-gray-800 shadow-sm transition-all duration-200 hover:border-purple-200 hover:shadow-md"
-            >
-              View All Opportunities
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════════
-          6 · CATEGORIES GRID
-      ═══════════════════════════════════════════ */}
-      <section id="categories" className="px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="mx-auto mb-14 max-w-2xl text-center">
-            <span className="mb-3 inline-block rounded-full bg-purple-100 px-4 py-1 text-xs font-bold uppercase tracking-wider text-purple-700">
-              Browse
-            </span>
-            <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-              Explore Categories
-            </h2>
-            <p className="mt-3 text-base text-gray-500 sm:text-lg">
-              Find the perfect opportunity type for your creator career.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 lg:gap-6">
-            {CATEGORIES.map((cat) => (
-              <a
-                key={cat.name}
-                href={`#cat-${cat.name.replace(/\s+/g, "-").toLowerCase()}`}
-                className="group relative flex flex-col items-center overflow-hidden rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-sm transition hover:border-transparent hover:shadow-xl sm:p-8"
-              >
-                {/* Hover gradient bg */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${cat.gradient} opacity-0 transition group-hover:opacity-100`} />
-
-                <span className="relative text-3xl sm:text-4xl">{cat.icon}</span>
-                <h3 className="relative mt-3 text-sm font-bold text-gray-900 transition group-hover:text-white sm:text-base">
-                  {cat.name}
-                </h3>
-                <p className="relative mt-1 text-xs font-medium text-gray-400 transition group-hover:text-white/80 sm:text-sm">
-                  {cat.count} listings
-                </p>
-              </a>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════════
-          7 · HOW IT WORKS
-      ═══════════════════════════════════════════ */}
-      <section id="about" className="bg-gray-50/60 px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="mx-auto mb-16 max-w-2xl text-center">
-            <span className="mb-3 inline-block rounded-full bg-cyan-100 px-4 py-1 text-xs font-bold uppercase tracking-wider text-cyan-700">
-              Simple
-            </span>
-            <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-              How It Works
-            </h2>
-            <p className="mt-3 text-base text-gray-500 sm:text-lg">
-              Get started in minutes — from profile to paycheck.
-            </p>
-          </div>
-
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {STEPS.map((s, idx) => (
-              <div key={s.step} className="group relative">
-                {/* Connector line (hidden on last) */}
-                {idx < STEPS.length - 1 && (
-                  <div className="absolute right-0 top-12 hidden h-0.5 w-full translate-x-1/2 bg-gradient-to-r from-purple-200 to-cyan-200 lg:block" />
-                )}
-
-                <div className="relative flex flex-col items-center rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-sm transition-all duration-300 hover:border-purple-200/50 hover:shadow-lg sm:p-8">
-                  <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-600 to-cyan-500 text-lg font-extrabold text-white shadow-md shadow-purple-500/20">
-                    {s.step}
-                  </span>
-                  <h3 className="mt-5 text-lg font-bold text-gray-900">{s.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-gray-500">{s.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════════
-          8 · TESTIMONIALS
-      ═══════════════════════════════════════════ */}
-      <section className="px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="mx-auto mb-14 max-w-2xl text-center">
-            <span className="mb-3 inline-block rounded-full bg-purple-100 px-4 py-1 text-xs font-bold uppercase tracking-wider text-purple-700">
-              Loved by Creators
-            </span>
-            <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-              What Creators Say
-            </h2>
-            <p className="mt-3 text-base text-gray-500 sm:text-lg">
-              Real results from real creators using our platform.
-            </p>
-          </div>
-
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {TESTIMONIALS.map((t) => (
-              <blockquote
-                key={t.name}
-                className="flex flex-col justify-between rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg sm:p-8"
-              >
-                {/* Stars */}
-                <div className="mb-4 flex gap-0.5">
-                  {[...Array(5)].map((_, i) => (
-                    <svg key={i} className="h-5 w-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.957a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.37 2.448a1 1 0 00-.364 1.118l1.287 3.957c.3.921-.755 1.688-1.54 1.118l-3.37-2.448a1 1 0 00-1.176 0l-3.37 2.448c-.784.57-1.838-.197-1.539-1.118l1.287-3.957a1 1 0 00-.364-1.118L2.063 9.384c-.783-.57-.38-1.81.588-1.81h4.162a1 1 0 00.95-.69l1.286-3.957z" />
+                    Browse Deals
+                    <svg className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                     </svg>
+                  </Link>
+                  <Link
+                    href="/signup/role"
+                    className="inline-flex w-full items-center justify-center rounded-2xl border-2 border-white/30 bg-white/10 px-8 py-4 text-sm font-bold text-white backdrop-blur-sm transition-all duration-200 hover:border-white/50 hover:bg-white/20 sm:w-auto sm:text-base focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-purple-700"
+                  >
+                    Join Free →
+                  </Link>
+                </div>
+
+                {/* Trust micro-stats */}
+                <div className="animate-fade-up animate-fade-up-delay-4 mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 lg:justify-start">
+                  {[
+                    { value: stats.verifiedBrands, label: "Verified Brands", suffix: "+" },
+                    { value: stats.totalCreators, label: "Creators", suffix: "+" },
+                    { value: stats.applicationsToday, label: "Applied Today", suffix: "" },
+                  ].map((s) => (
+                    <div key={s.label} className="text-center lg:text-left">
+                      <p className="text-xl font-extrabold text-white">
+                        <AnimatedCounter value={s.value} suffix={s.suffix} />
+                      </p>
+                      <p className="text-[11px] font-medium uppercase tracking-wide text-white/55">{s.label}</p>
+                    </div>
                   ))}
                 </div>
+              </div>
 
-                <p className="flex-1 text-sm leading-relaxed text-gray-600 sm:text-base">
-                  &ldquo;{t.quote}&rdquo;
-                </p>
-
-                <footer className="mt-6 flex items-center gap-3 border-t border-gray-100 pt-5">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-600 to-cyan-500 text-xs font-bold text-white">
-                    {t.avatar}
-                  </span>
-                  <div>
-                    <p className="text-sm font-bold text-gray-900">{t.name}</p>
-                    <p className="text-xs text-gray-400">{t.platform}</p>
-                  </div>
-                </footer>
-              </blockquote>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════════
-          9 · NEWSLETTER
-      ═══════════════════════════════════════════ */}
-      <section className="px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
-        <div className="relative mx-auto max-w-4xl overflow-hidden rounded-3xl bg-gradient-to-br from-purple-600 via-purple-500 to-cyan-500 p-8 text-center shadow-2xl shadow-purple-500/25 sm:p-12 lg:p-16">
-          {/* Decorative circles */}
-          <div className="pointer-events-none absolute -left-16 -top-16 h-64 w-64 rounded-full bg-white/10 blur-2xl" />
-          <div className="pointer-events-none absolute -bottom-16 -right-16 h-64 w-64 rounded-full bg-white/10 blur-2xl" />
-
-          <div className="relative">
-            <h2 className="text-2xl font-extrabold text-white sm:text-3xl lg:text-4xl">
-              Never Miss an Opportunity
-            </h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm text-white/80 sm:text-base">
-              Join 85,000+ creators and get the best brand deals, sponsorships and
-              creator jobs delivered to your inbox every week.
-            </p>
-
-            <form className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row">
-              <label htmlFor="email" className="sr-only">Email address</label>
-              <input
-                id="email"
-                type="email"
-                required
-                placeholder="you@example.com"
-                className="flex-1 rounded-xl border-2 border-white/20 bg-white/10 px-5 py-3.5 text-sm text-white placeholder-white/60 outline-none backdrop-blur-sm transition focus:border-white/40 focus:bg-white/20"
-              />
-              <button
-                type="submit"
-                className="rounded-xl bg-white px-6 py-3.5 text-sm font-bold text-purple-700 shadow-lg transition hover:bg-gray-100 hover:shadow-xl"
-              >
-                Subscribe Free
-              </button>
-            </form>
-
-            <p className="mt-4 text-xs text-white/60">
-              No spam. Unsubscribe anytime. We respect your privacy.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════════
-          10 · PREMIUM FOOTER
-      ═══════════════════════════════════════════ */}
-      <footer id="contact" className="border-t border-gray-100 bg-gray-50/60 px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
-            {/* Brand */}
-            <div className="sm:col-span-2 lg:col-span-1">
-              <a href="#home" className="flex items-center gap-2">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-purple-600 to-cyan-500 text-sm font-bold text-white shadow-md shadow-purple-500/20">
-                  C
-                </span>
-                <span className="text-lg font-bold tracking-tight text-gray-900">
-                  Creator<span className="text-purple-600">Hub</span>
-                </span>
-              </a>
-              <p className="mt-4 max-w-xs text-sm leading-relaxed text-gray-500">
-                The #1 platform for content creators to discover brand deals,
-                sponsorships, affiliate programs, and creator jobs worldwide.
-              </p>
-              {/* Social */}
-              <div className="mt-5 flex gap-3">
-                {[
-                  { label: "Twitter", path: "M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z" },
-                  { label: "Instagram", path: "M16 4H8a4 4 0 00-4 4v8a4 4 0 004 4h8a4 4 0 004-4V8a4 4 0 00-4-4zm-4 11a3 3 0 110-6 3 3 0 010 6zm4.5-7.5a1 1 0 110-2 1 1 0 010 2z" },
-                  { label: "LinkedIn", path: "M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-4 0v7h-4v-7a6 6 0 016-6zM2 9h4v12H2zM4 2a2 2 0 110 4 2 2 0 010-4z" },
-                ].map((social) => (
-                  <a
-                    key={social.label}
-                    href={`#${social.label.toLowerCase()}`}
-                    aria-label={social.label}
-                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 transition hover:border-purple-200 hover:text-purple-600"
-                  >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d={social.path} />
-                    </svg>
-                  </a>
-                ))}
+              {/* ── Right column: Dashboard preview ── */}
+              <div className="animate-fade-up animate-fade-up-delay-3">
+                <DashboardPreview
+                  opportunities={featuredOpps.slice(0, 3).map((o) => ({
+                    title: o.title,
+                    brand_name: o.brand.company_name,
+                    budget_type: o.budget_type,
+                    budget_min: o.budget_min,
+                    budget_max: o.budget_max,
+                    currency: o.currency,
+                    opportunity_type: o.opportunity_type,
+                    brand_verified: o.brand.is_verified,
+                  }))}
+                  stats={stats}
+                />
               </div>
             </div>
 
-            {/* For Creators */}
-            <div>
-              <h4 className="mb-4 text-sm font-bold uppercase tracking-wider text-gray-900">For Creators</h4>
-              <ul className="space-y-2.5">
-                {["Browse Opportunities", "Brand Deals", "Sponsorships", "Affiliate Programs", "Creator Jobs", "UGC Opportunities"].map((l) => (
-                  <li key={l}>
-                    <a href="#" className="text-sm text-gray-500 transition hover:text-purple-600">{l}</a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* For Brands */}
-            <div>
-              <h4 className="mb-4 text-sm font-bold uppercase tracking-wider text-gray-900">For Brands</h4>
-              <ul className="space-y-2.5">
-                {["Post Opportunity", "Pricing", "Enterprise Plans", "Creator Search", "Campaign Tools", "Analytics"].map((l) => (
-                  <li key={l}>
-                    <a href="#" className="text-sm text-gray-500 transition hover:text-purple-600">{l}</a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Company */}
-            <div>
-              <h4 className="mb-4 text-sm font-bold uppercase tracking-wider text-gray-900">Company</h4>
-              <ul className="space-y-2.5">
-                {["About Us", "Blog", "Careers", "Press", "Privacy Policy", "Terms of Service", "Contact"].map((l) => (
-                  <li key={l}>
-                    <a href="#" className="text-sm text-gray-500 transition hover:text-purple-600">{l}</a>
-                  </li>
-                ))}
-              </ul>
+            {/* Hero search — full width below grid */}
+            <div className="animate-fade-up animate-fade-up-delay-5 mt-14">
+              <HeroSearch />
             </div>
           </div>
 
-          {/* Bottom bar */}
-          <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-gray-200 pt-8 sm:flex-row">
-            <p className="text-xs text-gray-400">
-              &copy; {new Date().getFullYear()} Creator Opportunities Hub. All rights reserved.
-            </p>
-            <div className="flex gap-6">
-              <a href="#privacy" className="text-xs text-gray-400 transition hover:text-gray-600">Privacy</a>
-              <a href="#terms" className="text-xs text-gray-400 transition hover:text-gray-600">Terms</a>
-              <a href="#cookies" className="text-xs text-gray-400 transition hover:text-gray-600">Cookies</a>
+          {/* Scroll cue */}
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2" aria-hidden="true">
+            <div className="flex h-9 w-5 items-start justify-center rounded-full border-2 border-white/30 pt-1.5">
+              <div className="animate-float-fast h-1.5 w-1 rounded-full bg-white/60" />
             </div>
           </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════
+            TRUST BAR — real DB counts, immediately below hero
+        ══════════════════════════════════════════════════════ */}
+        <TrustBar
+          totalBrands={stats.totalBrands}
+          totalCreators={stats.totalCreators}
+          publishedOpportunities={stats.publishedOpportunities}
+          totalApplications={stats.totalApplications}
+          verifiedBrands={stats.verifiedBrands}
+        />
+
+        {/* ══════════════════════════════════════════════════════
+            PLATFORM STATS — dark section with animated counters
+        ══════════════════════════════════════════════════════ */}
+        <section
+          className="relative overflow-hidden bg-gradient-to-br from-slate-950 via-purple-950/60 to-slate-950 py-16 sm:py-20"
+          aria-label="Platform statistics"
+        >
+          {/* Decorative rotating rings */}
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-[0.07]" aria-hidden="true">
+            <div className="animate-rotate-slow h-[480px] w-[480px] rounded-full border border-purple-500" />
+            <div className="animate-rotate-slow absolute h-80 w-80 rounded-full border border-cyan-500" style={{ animationDirection: "reverse", animationDuration: "14s" }} />
+          </div>
+
+          <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-2 gap-8 lg:grid-cols-4">
+              {[
+                { value: stats.publishedOpportunities, label: "Live Opportunities", icon: "🎯", suffix: "+" },
+                { value: stats.totalCreators, label: "Registered Creators", icon: "🎨", suffix: "+" },
+                { value: stats.totalBrands, label: "Partner Brands", icon: "🏢", suffix: "+" },
+                { value: stats.totalApplications, label: "Applications Sent", icon: "✉️", suffix: "+" },
+              ].map((s, i) => (
+                <div
+                  key={s.label}
+                  className={`animate-fade-up animate-fade-up-delay-${i + 1} group flex flex-col items-center text-center`}
+                >
+                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-2xl backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
+                    <span aria-hidden="true">{s.icon}</span>
+                  </div>
+                  <p className="gradient-text-animated text-3xl font-extrabold tabular-nums sm:text-4xl lg:text-5xl">
+                    <AnimatedCounter value={s.value} suffix={s.suffix} />
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-gray-400">{s.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Wave divider */}
+        <div className="relative h-8 overflow-hidden bg-white" aria-hidden="true">
+          <svg className="absolute -top-1 w-full" viewBox="0 0 1440 32" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 0L1440 0L1440 32C1440 32 1080 8 720 8C360 8 0 32 0 32L0 0Z" fill="#020617" />
+          </svg>
         </div>
-      </footer>
-    </main>
+
+        {/* ══════════════════════════════════════════════════════
+            FEATURED OPPORTUNITIES
+        ══════════════════════════════════════════════════════ */}
+        <section
+          id="opportunities"
+          className="relative bg-white px-4 py-20 sm:px-6 sm:py-28 lg:px-8"
+          aria-labelledby="featured-heading"
+        >
+          <div className="pointer-events-none absolute left-1/2 top-0 h-72 w-[600px] -translate-x-1/2 rounded-full bg-purple-50 blur-3xl" aria-hidden="true" />
+
+          <div className="relative mx-auto max-w-7xl">
+            <div className="mx-auto mb-14 max-w-2xl text-center">
+              <span className="mb-4 inline-block rounded-full border border-purple-200 bg-purple-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest text-purple-700">
+                Featured
+              </span>
+              <h2 id="featured-heading" className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                Featured Opportunities
+              </h2>
+              <p className="mt-3 text-base text-gray-500 sm:text-lg">
+                Hand-picked deals from leading brands, paying real budgets.
+              </p>
+            </div>
+
+            <Suspense fallback={<OpportunityGridSkeleton count={6} />}>
+              {featuredOpps.length > 0 ? (
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {featuredOpps.map((opp) => (
+                    <OpportunityCard
+                      key={opp.id}
+                      id={opp.id}
+                      title={opp.title}
+                      slug={opp.slug}
+                      brand_name={opp.brand.company_name}
+                      brand_logo={opp.brand.logo_url}
+                      brand_verified={opp.brand.is_verified}
+                      opportunity_type={opp.opportunity_type}
+                      budget_min={opp.budget_min}
+                      budget_max={opp.budget_max}
+                      budget_type={opp.budget_type}
+                      currency={opp.currency}
+                      country={opp.country}
+                      deadline={opp.deadline}
+                      is_featured={opp.is_featured}
+                      category_names={opp.categories.map((c) => c.name)}
+                      applications_count={opp.applications_count}
+                      published_at={opp.published_at}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-purple-200 bg-purple-50/50 py-20 text-center">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-purple-100 text-3xl" aria-hidden="true">🎯</div>
+                  <h3 className="mt-4 text-lg font-semibold text-gray-700">No featured opportunities yet</h3>
+                  <p className="mt-2 max-w-xs text-sm text-gray-500">
+                    Brands are setting up their profiles. Check back soon for premium deals.
+                  </p>
+                  <Link
+                    href="/dashboard/opportunities/new"
+                    className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 px-6 py-2.5 text-sm font-bold text-white shadow-md shadow-purple-500/20 transition hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                  >
+                    Post an Opportunity
+                  </Link>
+                </div>
+              )}
+            </Suspense>
+
+            <div className="mt-12 text-center">
+              <Link
+                href="/opportunities"
+                className="group inline-flex items-center gap-2 rounded-2xl border-2 border-gray-200 bg-white px-8 py-3.5 text-sm font-bold text-gray-800 shadow-sm transition-all duration-200 hover:border-purple-300 hover:shadow-lg hover:shadow-purple-500/10 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+              >
+                View All Opportunities
+                <svg className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════
+            TRENDING CATEGORIES — Bento grid
+        ══════════════════════════════════════════════════════ */}
+        <section
+          id="categories"
+          className="relative overflow-hidden bg-gray-50 px-4 py-20 sm:px-6 sm:py-28 lg:px-8"
+          aria-labelledby="categories-heading"
+        >
+          <div className="pointer-events-none absolute -right-40 top-1/2 h-[500px] w-[500px] -translate-y-1/2 rounded-full bg-cyan-100/60 blur-3xl" aria-hidden="true" />
+          <div className="pointer-events-none absolute -left-40 bottom-0 h-80 w-80 rounded-full bg-purple-100/40 blur-3xl" aria-hidden="true" />
+
+          <div className="relative mx-auto max-w-7xl">
+            <div className="mx-auto mb-14 max-w-2xl text-center">
+              <span className="mb-4 inline-block rounded-full border border-cyan-200 bg-cyan-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest text-cyan-700">
+                Trending
+              </span>
+              <h2 id="categories-heading" className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                Explore by Category
+              </h2>
+              <p className="mt-3 text-base text-gray-500 sm:text-lg">
+                Brand deals, sponsorships, UGC, ambassador programs and more.
+              </p>
+            </div>
+
+            <Suspense fallback={<CategoryGridSkeleton />}>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 lg:gap-6">
+                <CategoriesBento categories={categories} />
+              </div>
+            </Suspense>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════
+            LIVE ACTIVITY FEED
+        ══════════════════════════════════════════════════════ */}
+        <section
+          className="relative bg-white px-4 py-20 sm:px-6 sm:py-28 lg:px-8"
+          aria-labelledby="activity-heading"
+        >
+          <div className="mx-auto max-w-7xl">
+            <div className="grid gap-16 lg:grid-cols-2 lg:items-start">
+              {/* Left */}
+              <div className="lg:sticky lg:top-24">
+                <span className="mb-4 inline-block rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest text-emerald-700">
+                  Live
+                </span>
+                <h2 id="activity-heading" className="mt-2 text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                  Happening Right Now
+                </h2>
+                <p className="mt-4 max-w-md text-base leading-relaxed text-gray-500 sm:text-lg">
+                  New opportunities, brand partnerships, and creator applications
+                  — updated in real time from the database.
+                </p>
+
+                <div className="mt-6 flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/80 px-5 py-4">
+                  <span className="animate-live-pulse h-3 w-3 shrink-0 rounded-full bg-emerald-500" aria-hidden="true" />
+                  <p className="text-sm font-semibold text-emerald-800">
+                    Live — new activity pushes automatically
+                  </p>
+                </div>
+
+                {/* Mini stats from activity */}
+                <dl className="mt-8 grid grid-cols-2 gap-4">
+                  {[
+                    { label: "New this week", value: activity.opportunities.length + activity.applications.length, icon: "📊" },
+                    { label: "Applied today", value: stats.applicationsToday, icon: "✉️" },
+                    { label: "Brands joined", value: activity.brands.length, icon: "🏢" },
+                    { label: "Total creators", value: stats.totalCreators, icon: "🎨" },
+                  ].map((item) => (
+                    <div key={item.label} className="glass-card-light rounded-xl p-4">
+                      <span className="text-xl" aria-hidden="true">{item.icon}</span>
+                      <dd className="mt-1.5 text-2xl font-extrabold text-gray-900">
+                        {item.value > 1000 ? `${(item.value / 1000).toFixed(1)}K` : item.value}
+                        <span className="text-base font-bold text-purple-600">+</span>
+                      </dd>
+                      <dt className="mt-0.5 text-xs text-gray-500">{item.label}</dt>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+
+              {/* Right — live feed */}
+              <Suspense fallback={<ActivitySkeleton count={6} />}>
+                <LiveActivity
+                  initialOpportunities={activity.opportunities}
+                  initialApplications={activity.applications}
+                  initialBrands={activity.brands}
+                />
+              </Suspense>
+            </div>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════
+            FEATURED BRANDS
+        ══════════════════════════════════════════════════════ */}
+        <section
+          className="relative overflow-hidden bg-gray-50 px-4 py-20 sm:px-6 sm:py-28 lg:px-8"
+          aria-labelledby="brands-heading"
+        >
+          <div className="pointer-events-none absolute -left-40 top-1/2 h-[500px] w-[500px] -translate-y-1/2 rounded-full bg-purple-100/50 blur-3xl" aria-hidden="true" />
+
+          <div className="relative mx-auto max-w-7xl">
+            <div className="mx-auto mb-14 max-w-2xl text-center">
+              <span className="mb-4 inline-block rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest text-indigo-700">
+                Partners
+              </span>
+              <h2 id="brands-heading" className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                Featured Brands
+              </h2>
+              <p className="mt-3 text-base text-gray-500 sm:text-lg">
+                Real companies with real budgets, actively looking for creators.
+              </p>
+            </div>
+
+            <Suspense fallback={<BrandGridSkeleton count={8} />}>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+                <FeaturedBrands brands={featuredBrands} />
+              </div>
+            </Suspense>
+
+            <div className="mt-12 text-center">
+              <Link
+                href="/signup/role"
+                className="group inline-flex items-center gap-2 rounded-2xl border-2 border-gray-200 bg-white px-8 py-3.5 text-sm font-bold text-gray-800 shadow-sm transition-all duration-200 hover:border-purple-300 hover:shadow-lg hover:shadow-purple-500/10 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+              >
+                List Your Brand
+                <svg className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════
+            TOP CREATORS
+        ══════════════════════════════════════════════════════ */}
+        <section
+          className="relative bg-white px-4 py-20 sm:px-6 sm:py-28 lg:px-8"
+          aria-labelledby="creators-heading"
+        >
+          <div className="pointer-events-none absolute right-0 top-0 h-[400px] w-[400px] rounded-full bg-cyan-50 blur-3xl" aria-hidden="true" />
+
+          <div className="relative mx-auto max-w-7xl">
+            <div className="mx-auto mb-14 max-w-2xl text-center">
+              <span className="mb-4 inline-block rounded-full border border-purple-200 bg-purple-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest text-purple-700">
+                Creators
+              </span>
+              <h2 id="creators-heading" className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                Top Creators
+              </h2>
+              <p className="mt-3 text-base text-gray-500 sm:text-lg">
+                Verified creators across YouTube, TikTok, Instagram and more.
+              </p>
+            </div>
+
+            <Suspense fallback={<CreatorGridSkeleton count={8} />}>
+              <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 lg:gap-6">
+                <TopCreators creators={topCreators} />
+              </div>
+            </Suspense>
+
+            <div className="mt-12 text-center">
+              <Link
+                href="/signup/role"
+                className="group inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-purple-600 to-cyan-500 px-8 py-3.5 text-sm font-bold text-white shadow-lg shadow-purple-500/25 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-purple-500/35 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+              >
+                Join as a Creator
+                <svg className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════
+            LATEST OPPORTUNITIES — dark section
+        ══════════════════════════════════════════════════════ */}
+        <section
+          className="relative overflow-hidden bg-slate-950 px-4 py-20 sm:px-6 sm:py-28 lg:px-8"
+          aria-labelledby="latest-heading"
+        >
+          <div className="pointer-events-none absolute -left-32 top-1/2 h-96 w-96 -translate-y-1/2 rounded-full bg-purple-900/50 blur-3xl" aria-hidden="true" />
+          <div className="pointer-events-none absolute -right-32 top-1/2 h-96 w-96 -translate-y-1/2 rounded-full bg-cyan-900/40 blur-3xl" aria-hidden="true" />
+
+          <div className="relative mx-auto max-w-7xl">
+            <div className="mx-auto mb-14 max-w-2xl text-center">
+              <span className="mb-4 inline-block rounded-full border border-cyan-700/50 bg-cyan-900/30 px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest text-cyan-400">
+                New
+              </span>
+              <h2 id="latest-heading" className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+                Latest Opportunities
+              </h2>
+              <p className="mt-3 text-base text-gray-400 sm:text-lg">
+                Fresh deals posted recently — apply before they close.
+              </p>
+            </div>
+
+            <Suspense fallback={
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="h-64 animate-shimmer rounded-2xl bg-white/5" aria-hidden="true" />
+                ))}
+              </div>
+            }>
+              {latestOpps.length > 0 ? (
+                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {latestOpps.map((opp) => (
+                    <OpportunityCard
+                      key={opp.id}
+                      id={opp.id}
+                      title={opp.title}
+                      slug={opp.slug}
+                      brand_name={opp.brand.company_name}
+                      brand_logo={opp.brand.logo_url}
+                      brand_verified={opp.brand.is_verified}
+                      opportunity_type={opp.opportunity_type}
+                      budget_min={opp.budget_min}
+                      budget_max={opp.budget_max}
+                      budget_type={opp.budget_type}
+                      currency={opp.currency}
+                      country={opp.country}
+                      deadline={opp.deadline}
+                      is_featured={opp.is_featured}
+                      category_names={opp.categories.map((c) => c.name)}
+                      applications_count={opp.applications_count}
+                      published_at={opp.published_at}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 py-20 text-center">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 text-3xl" aria-hidden="true">📭</div>
+                  <h3 className="mt-4 text-lg font-semibold text-gray-300">No opportunities yet</h3>
+                  <p className="mt-2 max-w-xs text-sm text-gray-500">
+                    Brands are onboarding now. Subscribe to the newsletter to be first in line.
+                  </p>
+                </div>
+              )}
+            </Suspense>
+
+            <div className="mt-12 text-center">
+              <Link
+                href="/opportunities"
+                className="group inline-flex items-center gap-2 rounded-2xl border-2 border-white/20 bg-white/10 px-8 py-3.5 text-sm font-bold text-white backdrop-blur-sm transition-all duration-200 hover:border-white/30 hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-slate-950"
+              >
+                View All Opportunities
+                <svg className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* Wave divider top of How It Works */}
+        <div className="relative h-8 overflow-hidden bg-white" aria-hidden="true">
+          <svg className="absolute -top-1 w-full" viewBox="0 0 1440 32" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 32L1440 32L1440 0C1440 0 1080 24 720 24C360 24 0 0 0 0L0 32Z" fill="#020617" />
+          </svg>
+        </div>
+
+        {/* ══════════════════════════════════════════════════════
+            HOW IT WORKS
+        ══════════════════════════════════════════════════════ */}
+        <section
+          id="about"
+          className="relative bg-white px-4 py-20 sm:px-6 sm:py-28 lg:px-8"
+          aria-labelledby="how-it-works-heading"
+        >
+          <div className="mx-auto max-w-7xl">
+            <div className="mx-auto mb-16 max-w-2xl text-center">
+              <span className="mb-4 inline-block rounded-full border border-purple-200 bg-purple-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest text-purple-700">
+                Simple
+              </span>
+              <h2 id="how-it-works-heading" className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                From Profile to Paycheck
+              </h2>
+              <p className="mt-3 text-base text-gray-500 sm:text-lg">
+                Get started in minutes — no complex setup, no intermediaries.
+              </p>
+            </div>
+
+            <div className="relative grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+              {/* Connector line */}
+              <div className="pointer-events-none absolute left-0 right-0 top-14 hidden h-px bg-gradient-to-r from-transparent via-purple-200 to-transparent lg:block" aria-hidden="true" />
+
+              {([
+                { step: "01", title: "Create Your Profile", description: "Sign up, pick your role, and showcase your niche, audience, platforms, and past partnerships.", icon: "👤", color: "from-purple-500 to-purple-700" },
+                { step: "02", title: "Discover Deals", description: "Browse curated brand deals, UGC jobs, sponsorships, and creator opportunities filtered to your niche.", icon: "🔍", color: "from-indigo-500 to-indigo-700" },
+                { step: "03", title: "Apply Instantly", description: "One-click applications using your existing profile. Full application history in your dashboard.", icon: "⚡", color: "from-cyan-500 to-cyan-700" },
+                { step: "04", title: "Land the Deal", description: "Get accepted, receive briefs, create content, and build long-term brand relationships.", icon: "🎉", color: "from-emerald-500 to-emerald-700" },
+              ] as const).map((s, idx) => (
+                <div key={s.step} className={`animate-fade-up animate-fade-up-delay-${idx + 1} group relative`}>
+                  <div className="glass-card-light bento-glow flex flex-col items-center rounded-2xl p-6 text-center sm:p-8">
+                    <div className={`relative flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br ${s.color} text-2xl shadow-lg transition-transform duration-300 group-hover:scale-110`}>
+                      <span aria-hidden="true">{s.icon}</span>
+                      <span className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white text-[11px] font-extrabold text-gray-800 shadow-md ring-1 ring-gray-100">
+                        {s.step}
+                      </span>
+                    </div>
+                    <h3 className="mt-5 text-base font-bold text-gray-900 sm:text-lg">{s.title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-gray-500">{s.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-14 text-center">
+              <Link
+                href="/signup/role"
+                className="group inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-purple-600 to-cyan-500 px-10 py-4 text-sm font-bold text-white shadow-xl shadow-purple-500/25 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-purple-500/35 sm:text-base focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+              >
+                Get Started Free
+                <svg className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </Link>
+              <p className="mt-3 text-xs text-gray-400">No credit card required · Free forever for creators</p>
+            </div>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════
+            NEWSLETTER CTA
+        ══════════════════════════════════════════════════════ */}
+        <section
+          className="relative overflow-hidden bg-gray-50 px-4 py-20 sm:px-6 sm:py-28 lg:px-8"
+          aria-labelledby="newsletter-heading"
+        >
+          <div className="mx-auto max-w-5xl">
+            <div className="aurora-bg relative overflow-hidden rounded-3xl px-8 py-12 text-center shadow-2xl shadow-purple-500/20 sm:px-12 lg:px-16 lg:py-16">
+              {/* Noise overlay */}
+              <div
+                className="pointer-events-none absolute inset-0 opacity-[0.03]"
+                style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")" }}
+                aria-hidden="true"
+              />
+              <div className="pointer-events-none absolute -left-16 -top-16 h-64 w-64 rounded-full bg-white/10 blur-2xl" aria-hidden="true" />
+              <div className="pointer-events-none absolute -bottom-16 -right-16 h-64 w-64 rounded-full bg-white/10 blur-2xl" aria-hidden="true" />
+
+              <div className="relative">
+                <h2 id="newsletter-heading" className="sr-only">Newsletter — never miss an opportunity</h2>
+                <NewsletterForm creatorCount={stats.totalCreators} />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════
+            FOOTER
+        ══════════════════════════════════════════════════════ */}
+        <footer
+          id="contact"
+          className="border-t border-gray-100 bg-white px-4 py-16 sm:px-6 lg:px-8"
+          aria-label="Site footer"
+        >
+          <div className="mx-auto max-w-7xl">
+            <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+              {/* Brand */}
+              <div className="sm:col-span-2 lg:col-span-1">
+                <Link href="/" className="inline-flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 rounded-lg" aria-label="CreatorHub home">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-purple-600 to-cyan-500 text-sm font-bold text-white shadow-md shadow-purple-500/20" aria-hidden="true">C</span>
+                  <span className="text-lg font-bold tracking-tight text-gray-900">Creator<span className="text-purple-600">Hub</span></span>
+                </Link>
+                <p className="mt-4 max-w-xs text-sm leading-relaxed text-gray-500">
+                  The premium marketplace where brands post opportunities and creators apply in one click.
+                </p>
+                <div className="mt-5 flex gap-3" aria-label="Social links">
+                  {[
+                    { label: "Twitter / X", href: "#twitter", d: "M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z" },
+                    { label: "Instagram", href: "#instagram", d: "M16 4H8a4 4 0 00-4 4v8a4 4 0 004 4h8a4 4 0 004-4V8a4 4 0 00-4-4zm-4 11a3 3 0 110-6 3 3 0 010 6zm4.5-7.5a1 1 0 110-2 1 1 0 010 2z" },
+                    { label: "LinkedIn", href: "#linkedin", d: "M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-4 0v7h-4v-7a6 6 0 016-6zM2 9h4v12H2zM4 2a2 2 0 110 4 2 2 0 010-4z" },
+                  ].map((s) => (
+                    <a key={s.label} href={s.href} aria-label={s.label} className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 transition hover:border-purple-200 hover:text-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-1">
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" d={s.d} />
+                      </svg>
+                    </a>
+                  ))}
+                </div>
+              </div>
+
+              {/* For Creators */}
+              <nav aria-label="Creator resources">
+                <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-gray-900">For Creators</h3>
+                <ul className="space-y-2.5">
+                  {[
+                    { label: "Browse Opportunities", href: "/opportunities" },
+                    { label: "Brand Deals", href: "/opportunities?category=brand-deals" },
+                    { label: "Sponsorships", href: "/opportunities?category=sponsorships" },
+                    { label: "Affiliate Programs", href: "/opportunities?category=affiliate-programs" },
+                    { label: "Creator Jobs", href: "/opportunities?category=creator-jobs" },
+                    { label: "UGC Opportunities", href: "/opportunities?category=ugc-jobs" },
+                  ].map((l) => (
+                    <li key={l.label}>
+                      <Link href={l.href} className="text-sm text-gray-500 transition hover:text-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 rounded">{l.label}</Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+
+              {/* For Brands */}
+              <nav aria-label="Brand resources">
+                <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-gray-900">For Brands</h3>
+                <ul className="space-y-2.5">
+                  {[
+                    { label: "Post Opportunity", href: "/dashboard/opportunities/new" },
+                    { label: "My Dashboard", href: "/dashboard" },
+                    { label: "Manage Applications", href: "/dashboard/applicants" },
+                    { label: "Company Profile", href: "/dashboard/company" },
+                    { label: "Sign Up as Brand", href: "/signup/role" },
+                  ].map((l) => (
+                    <li key={l.label}>
+                      <Link href={l.href} className="text-sm text-gray-500 transition hover:text-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 rounded">{l.label}</Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+
+              {/* Platform */}
+              <nav aria-label="Platform links">
+                <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-gray-900">Platform</h3>
+                <ul className="space-y-2.5">
+                  {[
+                    { label: "Sign Up", href: "/signup/role" },
+                    { label: "Log In", href: "/login" },
+                    { label: "Settings", href: "/dashboard/settings" },
+                    { label: "Privacy Policy", href: "#privacy" },
+                    { label: "Terms of Service", href: "#terms" },
+                  ].map((l) => (
+                    <li key={l.label}>
+                      <Link href={l.href} className="text-sm text-gray-500 transition hover:text-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 rounded">{l.label}</Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            </div>
+
+            <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-gray-100 pt-8 sm:flex-row">
+              <p className="text-xs text-gray-400">
+                &copy; {new Date().getFullYear()} Creator Opportunities Hub. All rights reserved.
+              </p>
+              <div className="flex gap-6">
+                <a href="#privacy" className="text-xs text-gray-400 transition hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 rounded">Privacy</a>
+                <a href="#terms" className="text-xs text-gray-400 transition hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 rounded">Terms</a>
+                <a href="#cookies" className="text-xs text-gray-400 transition hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 rounded">Cookies</a>
+              </div>
+            </div>
+          </div>
+        </footer>
+      </main>
+    </>
   );
 }

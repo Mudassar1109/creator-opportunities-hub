@@ -151,3 +151,251 @@ body {
   background-size: 200% 100%;
   animation: shimmer 2s ease-in-out infinite;
 }
+
+/* ── Aurora gradient background ─────────────────────────── */
+@keyframes aurora {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.aurora-bg {
+  background: linear-gradient(
+    135deg,
+    #7c3aed 0%,
+    #6d28d9 15%,
+    #0891b2 30%,
+    #7c3aed 45%,
+    #a855f7 60%,
+    #06b6d4 75%,
+    #7c3aed 90%,
+    #4f46e5 100%
+  );
+  background-size: 400% 400%;
+  animation: aurora 12s ease infinite;
+}
+
+/* ── Floating blobs ──────────────────────────────────────── */
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%       { transform: translateY(-28px) scale(1.04); }
+}
+
+@keyframes float-medium {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  33%       { transform: translateY(-18px) rotate(3deg); }
+  66%       { transform: translateY(10px) rotate(-3deg); }
+}
+
+@keyframes float-fast {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-12px); }
+}
+
+.animate-float-slow   { animation: float-slow 8s ease-in-out infinite; }
+.animate-float-medium { animation: float-medium 6s ease-in-out infinite; }
+.animate-float-fast   { animation: float-fast 4s ease-in-out infinite; }
+
+/* ── Gradient border ─────────────────────────────────────── */
+@keyframes gradient-border-rotate {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.gradient-border {
+  position: relative;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, #7c3aed, #06b6d4, #a855f7, #7c3aed);
+  background-size: 300% 300%;
+  animation: gradient-border-rotate 4s ease infinite;
+  z-index: -1;
+}
+
+/* ── Scroll-reveal fade-up ───────────────────────────────── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(32px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-fade-up-delay-1 { animation-delay: 0.1s; }
+.animate-fade-up-delay-2 { animation-delay: 0.2s; }
+.animate-fade-up-delay-3 { animation-delay: 0.3s; }
+.animate-fade-up-delay-4 { animation-delay: 0.4s; }
+.animate-fade-up-delay-5 { animation-delay: 0.5s; }
+.animate-fade-up-delay-6 { animation-delay: 0.6s; }
+
+/* ── Live activity pulse dot ─────────────────────────────── */
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.6; transform: scale(0.8); }
+}
+
+.animate-live-pulse {
+  animation: live-pulse 1.5s ease-in-out infinite;
+}
+
+/* ── Glass card hover lift ───────────────────────────────── */
+.glass-card {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.25s ease;
+}
+
+.glass-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 60px rgba(124, 58, 237, 0.25);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+/* ── Dark glass (for light bg sections) ─────────────────── */
+.glass-card-light {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 24px rgba(124, 58, 237, 0.08);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card-light:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(124, 58, 237, 0.14);
+}
+
+/* ── Glass reflection on dark cards ─────────────────────── */
+.glass-reflection {
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-reflection::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.04) 50%,
+    rgba(255, 255, 255, 0.08) 55%,
+    rgba(255, 255, 255, 0.04) 60%,
+    transparent 70%
+  );
+  transform: skewX(-15deg);
+  pointer-events: none;
+  transition: left 0.6s ease;
+}
+
+.glass-reflection:hover::after {
+  left: 120%;
+}
+
+/* ── Section smooth background transitions ───────────────── */
+section {
+  position: relative;
+}
+
+/* ── Smooth opacity reveal for content ───────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  .animate-fade-up {
+    animation: fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up,
+  .animate-float-slow,
+  .animate-float-medium,
+  .animate-float-fast,
+  .animate-rotate-slow,
+  .animate-live-pulse,
+  .gradient-text-animated,
+  .aurora-bg {
+    animation: none !important;
+  }
+  .aurora-bg {
+    background: linear-gradient(135deg, #7c3aed, #06b6d4);
+  }
+}/* ── Bento grid item hover glow ──────────────────────────── */
+.bento-glow:hover {
+  box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.3), 0 8px 32px rgba(124, 58, 237, 0.12);
+}
+
+/* ── Ticker animation for activity feed ─────────────────── */
+@keyframes ticker-slide {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* ── Marquee for brand logos ─────────────────────────────── */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* ── Gradient text shimmer ───────────────────────────────── */
+@keyframes text-shimmer {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.gradient-text-animated {
+  background: linear-gradient(135deg, #7c3aed, #a855f7, #06b6d4, #7c3aed);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: text-shimmer 5s ease infinite;
+}
+
+/* ── Scan line glow on dashboard preview ─────────────────── */
+@keyframes scan-line {
+  0%   { top: -10%; opacity: 0.6; }
+  100% { top: 110%; opacity: 0; }
+}
+
+.scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(124, 58, 237, 0.6), transparent);
+  animation: scan-line 3s ease-in-out infinite;
+}
+
+/* ── Rotate slow ─────────────────────────────────────────── */
+@keyframes rotate-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.animate-rotate-slow {
+  animation: rotate-slow 20s linear infinite;
+}
