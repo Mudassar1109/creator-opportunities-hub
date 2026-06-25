@@ -399,3 +399,23 @@ section {
 .animate-rotate-slow {
   animation: rotate-slow 20s linear infinite;
 }
+
+/* ── Loading dot bounce (used in root loading.tsx) ───────── */
+@keyframes loading-dot {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40%            { transform: scale(1);   opacity: 1;   }
+}
+
+.animate-loading-dot {
+  animation: loading-dot 1.2s ease-in-out infinite;
+}
+
+/* ── Page enter fade (applied to main content areas) ────── */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.page-enter {
+  animation: page-enter 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}

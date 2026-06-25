@@ -776,11 +776,12 @@ export default async function HomePage() {
                 <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-gray-900">Platform</h3>
                 <ul className="space-y-2.5">
                   {[
-                    { label: "Sign Up", href: "/signup/role" },
-                    { label: "Log In", href: "/login" },
-                    { label: "Settings", href: "/dashboard/settings" },
-                    { label: "Privacy Policy", href: "#privacy" },
-                    { label: "Terms of Service", href: "#terms" },
+                    { label: "About Us", href: "/about" },
+                    { label: "Blog", href: "/blog" },
+                    { label: "Careers", href: "/careers" },
+                    { label: "Contact", href: "/contact" },
+                    { label: "Privacy Policy", href: "/privacy" },
+                    { label: "Terms of Service", href: "/terms" },
                   ].map((l) => (
                     <li key={l.label}>
                       <Link href={l.href} className="text-sm text-gray-500 transition hover:text-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 rounded">{l.label}</Link>
@@ -795,9 +796,9 @@ export default async function HomePage() {
                 &copy; {new Date().getFullYear()} Creator Opportunities Hub. All rights reserved.
               </p>
               <div className="flex gap-6">
-                <a href="#privacy" className="text-xs text-gray-400 transition hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 rounded">Privacy</a>
-                <a href="#terms" className="text-xs text-gray-400 transition hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 rounded">Terms</a>
-                <a href="#cookies" className="text-xs text-gray-400 transition hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 rounded">Cookies</a>
+                <a href="/privacy" className="text-xs text-gray-400 transition hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 rounded">Privacy</a>
+                <a href="/terms" className="text-xs text-gray-400 transition hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 rounded">Terms</a>
+                <a href="/cookies" className="text-xs text-gray-400 transition hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 rounded">Cookies</a>
               </div>
             </div>
           </div>
