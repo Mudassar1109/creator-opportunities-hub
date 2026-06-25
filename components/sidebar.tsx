@@ -464,19 +464,32 @@ export function Sidebar() {
 
     loadUnreadCount();
 
-    // Set up realtime subscription for message changes
+    // Set up realtime subscription for message changes (INSERT and UPDATE)
     const supabase = createClient();
     const channel = supabase
       .channel("sidebar-messages-changes")
       .on(
         "postgres_changes",
         {
-          event: "*",
+          event: "INSERT",
           schema: "public",
           table: "messages",
         },
         async () => {
-          // Reload unread count when messages change
+          // Reload unread count when new message arrives
+          const count = await getUnreadMessageCount(userId);
+          setUnreadMessageCount(count);
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "messages",
+        },
+        async () => {
+          // Reload unread count when message is marked as read
           const count = await getUnreadMessageCount(userId);
           setUnreadMessageCount(count);
         }

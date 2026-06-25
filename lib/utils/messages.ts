@@ -50,12 +50,15 @@ export async function getUnreadMessageCount(userId: string): Promise<number> {
 
 /**
  * Mark all messages in a conversation as read for the current user
+ * Only updates messages NOT sent by the current user
  */
-export async function markConversationRead(conversationId: string): Promise<void> {
+export async function markConversationRead(conversationId: string, userId: string): Promise<void> {
   const supabase = createClient();
 
   await supabase
     .from("messages")
     .update({ is_read: true })
-    .eq("conversation_id", conversationId);
+    .eq("conversation_id", conversationId)
+    .neq("sender_id", userId)
+    .eq("is_read", false);
 }

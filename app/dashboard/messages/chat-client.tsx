@@ -78,7 +78,7 @@ const supabase = supabaseRef.current;
             created_at,
             applications(opportunity_id, opportunities(title)),
             brands(company_name),
-            messages(id, message, sender_id, created_at)
+            messages(id, message, sender_id, is_read, created_at)
           `)
           .eq("creator_id", userId)
           .order("created_at", { ascending: false });
@@ -103,7 +103,7 @@ const supabase = supabaseRef.current;
               created_at,
               applications(opportunity_id, creator_id, opportunities(title), profiles(full_name)),
               brands(company_name),
-              messages(id, message, sender_id, created_at)
+              messages(id, message, sender_id, is_read, created_at)
             `)
             .in("brand_id", brandIds)
             .order("created_at", { ascending: false });
@@ -134,6 +134,11 @@ const supabase = supabaseRef.current;
             ? (brand?.company_name ?? "Brand")
             : (opp?.profiles?.full_name ?? "Creator");
 
+          // Calculate unread count: messages not sent by current user where is_read = false
+          const unread_count = msgs.filter(
+            (m) => m.sender_id !== userId && !m.is_read
+          ).length;
+
           return {
             id: conv.id,
             application_id: conv.application_id,
@@ -144,7 +149,7 @@ const supabase = supabaseRef.current;
             other_party_name: otherName,
             last_message: lastMsg?.message ?? null,
             last_message_time: lastMsg?.created_at ?? null,
-            unread_count: 0,
+            unread_count,
           };
         });
 
@@ -190,8 +195,8 @@ const supabase = supabaseRef.current;
       console.log("[Chat] Loaded messages:", data?.length ?? 0);
       setMessages((data as MessageData[]) ?? []);
 
-      // Mark conversation as read
-      await markConversationRead(convId);
+      // Mark conversation as read (only messages not sent by current user)
+      await markConversationRead(convId, userId);
     }
 
     loadMessages();
