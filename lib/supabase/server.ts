@@ -11,6 +11,7 @@
 
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { isAdmin } from "@/lib/admin";
 import type { Database } from "@/lib/database.types";
 
 function getSupabaseEnv() {
@@ -92,4 +93,16 @@ export async function getUserWithRole() {
     user,
     role: (profile?.role as "creator" | "brand") ?? "creator",
   };
+}
+
+// ─── Convenience: get current user only if admin ──────────
+// Uses dual validation from lib/admin.ts (role + env email whitelist).
+// Future: will also verify 2FA status, session TTL, and login notification.
+
+export async function getAdminUser() {
+  const user = await getUser();
+  if (!user || !isAdmin(user)) return null;
+
+  const adminRole = user.app_metadata?.admin_role as string;
+  return { user, adminRole };
 }

@@ -15,9 +15,10 @@
 
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { isAdmin } from "@/lib/admin";
 
 // Routes that require authentication
-const PROTECTED_ROUTES = ["/dashboard"];
+const PROTECTED_ROUTES = ["/dashboard", "/admin"];
 
 // Routes that authenticated users should be redirected away from
 const AUTH_ROUTES = ["/login", "/signup"];
@@ -80,13 +81,21 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // ── Auth pages: redirect logged-in users to /dashboard ────
+  // ── Admin gate: dual validation (role + email) ────────────
+  if (pathname.startsWith("/admin") && user) {
+    if (!isAdmin(user)) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+  }
+
+  // ── Auth pages: redirect logged-in users ──────────────────
   const isAuthRoute = AUTH_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   );
 
   if (isAuthRoute && user) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    const redirectUrl = isAdmin(user) ? "/admin" : "/dashboard";
+    return NextResponse.redirect(new URL(redirectUrl, request.url));
   }
 
   return supabaseResponse;
