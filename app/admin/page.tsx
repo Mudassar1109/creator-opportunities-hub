@@ -7,7 +7,7 @@ export default async function AdminPage() {
   const result = await getAdminUser();
   if (!result) redirect("/login");
 
-  const { user, adminRole } = result;
+  const { adminRole } = result;
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center dark:border-gray-800 dark:bg-gray-900">
