@@ -52,7 +52,7 @@ export function MouseGlow() {
           "--gx": "-999px",
           "--gy": "-999px",
           background:
-            "radial-gradient(600px circle at var(--gx) var(--gy), rgba(124, 58, 237, 0.06), transparent 60%)",
+            "radial-gradient(600px circle at var(--gx) var(--gy), rgba(79, 70, 229, 0.06), transparent 60%)",
         } as React.CSSProperties
       }
     />

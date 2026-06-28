@@ -32,13 +32,13 @@ const PLATFORM_ICONS: Record<string, string> = {
 export function TopCreators({ creators }: { creators: TopCreator[] }) {
   if (creators.length === 0) {
     return (
-      <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 py-16">
+      <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 py-16">
         <span className="text-4xl" aria-hidden="true">🎨</span>
-        <p className="mt-4 text-base font-semibold text-gray-500">No creators have joined yet.</p>
-        <p className="mt-1 text-sm text-gray-400">Be among the first to build your creator profile.</p>
+        <p className="mt-4 text-base font-semibold text-slate-500">No creators have joined yet.</p>
+        <p className="mt-1 text-sm text-slate-400">Be among the first to build your creator profile.</p>
         <Link
           href="/signup/role"
-          className="mt-5 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 px-6 py-2.5 text-sm font-bold text-white shadow-md shadow-purple-500/20 transition hover:shadow-lg"
+          className="mt-5 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-bold text-white shadow-md shadow-indigo-500/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-indigo-700 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
         >
           Join as a Creator
         </Link>
@@ -51,7 +51,7 @@ export function TopCreators({ creators }: { creators: TopCreator[] }) {
       {creators.map((creator, i) => (
         <div
           key={creator.id}
-          className={`animate-fade-up animate-fade-up-delay-${Math.min(i + 1, 6)} glass-card-light bento-glow group rounded-2xl p-5 text-center`}
+          className={`animate-fade-up animate-fade-up-delay-${Math.min(i + 1, 6)} group rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-500/10`}
           role="article"
         >
           {/* Avatar */}
@@ -60,12 +60,12 @@ export function TopCreators({ creators }: { creators: TopCreator[] }) {
               <img
                 src={creator.avatar_url}
                 alt={creator.full_name}
-                className="h-full w-full rounded-full object-cover ring-2 ring-purple-200 ring-offset-2"
+                className="h-full w-full rounded-full object-cover ring-2 ring-slate-200 ring-offset-2"
                 loading="lazy"
               />
             ) : (
               <div
-                className="flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 text-xl font-bold text-white ring-2 ring-purple-200 ring-offset-2"
+                className="flex h-full w-full items-center justify-center rounded-full bg-indigo-100 text-xl font-bold text-indigo-600 ring-2 ring-slate-200 ring-offset-2"
                 aria-hidden="true"
               >
                 {creator.full_name[0]?.toUpperCase() ?? "?"}
@@ -85,12 +85,12 @@ export function TopCreators({ creators }: { creators: TopCreator[] }) {
           </div>
 
           {/* Name */}
-          <h3 className="text-sm font-bold text-gray-900">{creator.full_name}</h3>
-          <p className="text-xs text-gray-500">@{creator.username}</p>
+          <h3 className="text-sm font-bold text-slate-900">{creator.full_name}</h3>
+          <p className="text-xs text-slate-500">@{creator.username}</p>
 
           {/* Followers */}
           {creator.follower_count > 0 && (
-            <p className="mt-2 text-sm font-bold text-purple-600">
+            <p className="mt-2 text-sm font-bold text-indigo-600">
               {formatFollowers(creator.follower_count)} followers
             </p>
           )}
@@ -117,7 +117,7 @@ export function TopCreators({ creators }: { creators: TopCreator[] }) {
               {creator.niches.slice(0, 2).map((niche) => (
                 <span
                   key={niche}
-                  className="rounded-full bg-purple-50 px-2.5 py-0.5 text-[10px] font-semibold text-purple-700"
+                  className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-[10px] font-semibold text-indigo-700"
                 >
                   {niche}
                 </span>
@@ -127,7 +127,7 @@ export function TopCreators({ creators }: { creators: TopCreator[] }) {
 
           {/* Country */}
           {creator.country && (
-            <p className="mt-2 text-xs text-gray-400">{creator.country}</p>
+            <p className="mt-2 text-xs text-slate-400">{creator.country}</p>
           )}
         </div>
       ))}

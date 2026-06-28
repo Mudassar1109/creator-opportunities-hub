@@ -30,13 +30,13 @@ function getOpportunityIcon(type: string): { icon: string; color: string } {
     sponsorship: { icon: "🎯", color: "from-indigo-500/20 to-indigo-600/20 border-indigo-200" },
     ugc: { icon: "🎬", color: "from-pink-500/20 to-pink-600/20 border-pink-200" },
     creator_job: { icon: "💼", color: "from-emerald-500/20 to-emerald-600/20 border-emerald-200" },
-    affiliate_program: { icon: "🔗", color: "from-purple-500/20 to-purple-600/20 border-purple-200" },
+    affiliate_program: { icon: "🔗", color: "from-indigo-500/20 to-indigo-600/20 border-indigo-200" },
     collaboration: { icon: "🤜", color: "from-amber-500/20 to-amber-600/20 border-amber-200" },
     ambassador_program: { icon: "⭐", color: "from-rose-500/20 to-rose-600/20 border-rose-200" },
     remote_work: { icon: "🌍", color: "from-cyan-500/20 to-cyan-600/20 border-cyan-200" },
     paid_campaign: { icon: "📢", color: "from-violet-500/20 to-violet-600/20 border-violet-200" },
   };
-  return map[type] ?? { icon: "📌", color: "from-gray-500/20 to-gray-600/20 border-gray-200" };
+  return map[type] ?? { icon: "📌", color: "from-slate-500/20 to-slate-600/20 border-slate-200" };
 }
 
 interface RawOpportunity {
@@ -112,9 +112,8 @@ function buildActivityItems(
     });
   });
 
-  // Sort by recency (the time string is approximate, sort by type order)
+  // Sort by recency
   return items.sort((a, b) => {
-    // heuristic: "Just now" < "Xm ago" < "Xh ago" < "Xd ago"
     const rank = (t: string) => {
       if (t === "Just now") return 0;
       if (t.endsWith("m ago")) return parseInt(t);
@@ -140,7 +139,6 @@ export function LiveActivity({ initialOpportunities, initialApplications, initia
         { event: "INSERT", schema: "public", table: "opportunities", filter: "status=eq.active" },
         async (payload) => {
           const newOpp = payload.new as RawOpportunity;
-          // Fetch brand name
           const { data: brand } = await supabase
             .from("brands")
             .select("company_name")
@@ -190,9 +188,9 @@ export function LiveActivity({ initialOpportunities, initialApplications, initia
 
   if (items.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 py-12 text-center">
+      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 py-12 text-center">
         <span className="text-3xl" aria-hidden="true">📭</span>
-        <p className="mt-3 text-sm font-medium text-gray-500">No activity yet — be the first!</p>
+        <p className="mt-3 text-sm font-medium text-slate-500">No activity yet — be the first!</p>
       </div>
     );
   }
@@ -212,10 +210,10 @@ export function LiveActivity({ initialOpportunities, initialApplications, initia
             {item.icon}
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-gray-900 leading-tight">{item.title}</p>
-            <p className="mt-0.5 truncate text-xs text-gray-500">{item.subtitle}</p>
+            <p className="text-sm font-semibold text-slate-900 leading-tight">{item.title}</p>
+            <p className="mt-0.5 truncate text-xs text-slate-500">{item.subtitle}</p>
           </div>
-          <span className="shrink-0 text-xs font-medium text-gray-400 tabular-nums">{item.time}</span>
+          <span className="shrink-0 text-xs font-medium text-slate-400 tabular-nums">{item.time}</span>
           {item.time === "Just now" && (
             <span
               className="animate-live-pulse h-2 w-2 shrink-0 rounded-full bg-emerald-500"

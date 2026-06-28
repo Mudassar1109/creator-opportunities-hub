@@ -12,13 +12,13 @@ interface FeaturedBrand {
 export function FeaturedBrands({ brands }: { brands: FeaturedBrand[] }) {
   if (brands.length === 0) {
     return (
-      <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 py-16">
+      <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 py-16">
         <span className="text-4xl" aria-hidden="true">🏢</span>
-        <p className="mt-4 text-base font-semibold text-gray-500">No brands have joined yet.</p>
-        <p className="mt-1 text-sm text-gray-400">Check back soon — great brands are on their way.</p>
+        <p className="mt-4 text-base font-semibold text-slate-500">No brands have joined yet.</p>
+        <p className="mt-1 text-sm text-slate-400">Check back soon — great brands are on their way.</p>
         <Link
           href="/signup/role"
-          className="mt-5 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 px-6 py-2.5 text-sm font-bold text-white shadow-md shadow-purple-500/20 transition hover:shadow-lg"
+          className="mt-5 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-bold text-white shadow-md shadow-indigo-500/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-indigo-700 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
         >
           Join as a Brand
         </Link>
@@ -31,7 +31,7 @@ export function FeaturedBrands({ brands }: { brands: FeaturedBrand[] }) {
       {brands.map((brand, i) => (
         <div
           key={brand.id}
-          className={`animate-fade-up animate-fade-up-delay-${Math.min(i + 1, 6)} glass-card-light bento-glow group rounded-2xl p-5`}
+          className={`animate-fade-up animate-fade-up-delay-${Math.min(i + 1, 6)} group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-500/10`}
           role="article"
         >
           <div className="flex items-start gap-4">
@@ -46,7 +46,7 @@ export function FeaturedBrands({ brands }: { brands: FeaturedBrand[] }) {
                 />
               ) : (
                 <div
-                  className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-100 to-cyan-100 text-lg font-bold text-purple-600"
+                  className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-100 text-lg font-bold text-indigo-600"
                   aria-hidden="true"
                 >
                   {brand.company_name[0]?.toUpperCase()}
@@ -57,7 +57,7 @@ export function FeaturedBrands({ brands }: { brands: FeaturedBrand[] }) {
             {/* Details */}
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
-                <h3 className="truncate text-sm font-bold text-gray-900">{brand.company_name}</h3>
+                <h3 className="truncate text-sm font-bold text-slate-900">{brand.company_name}</h3>
                 {brand.is_verified && (
                   <svg
                     className="h-4 w-4 shrink-0 text-blue-500"
@@ -74,15 +74,15 @@ export function FeaturedBrands({ brands }: { brands: FeaturedBrand[] }) {
                 )}
               </div>
               {brand.industry && (
-                <p className="mt-0.5 text-xs text-gray-500">{brand.industry}</p>
+                <p className="mt-0.5 text-xs text-slate-500">{brand.industry}</p>
               )}
             </div>
           </div>
 
           {/* Active opportunities count */}
-          <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3">
-            <span className="text-xs text-gray-500">Active opportunities</span>
-            <span className="rounded-full bg-purple-50 px-2.5 py-1 text-xs font-bold text-purple-700">
+          <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+            <span className="text-xs text-slate-500">Active opportunities</span>
+            <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700">
               {brand.active_opportunities_count}
             </span>
           </div>

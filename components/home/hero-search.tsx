@@ -56,12 +56,12 @@ export function HeroSearch() {
       role="search"
       aria-label="Search opportunities"
     >
-      <div className="glass-card-light flex flex-col gap-3 rounded-2xl p-3 sm:flex-row sm:items-center lg:rounded-3xl lg:p-4">
+      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white p-3 shadow-lg shadow-indigo-500/5 sm:flex-row sm:items-center lg:rounded-3xl lg:p-4">
         {/* Keyword */}
         <div className="relative flex-1">
           <label htmlFor="hero-keyword" className="sr-only">Search keyword</label>
           <svg
-            className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-purple-400"
+            className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"
             fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
             aria-hidden="true"
           >
@@ -72,19 +72,19 @@ export function HeroSearch() {
             type="text"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
-            placeholder="Brand deals, UGC, sponsorships…"
-            className="w-full rounded-xl border border-transparent bg-white/60 py-3 pl-11 pr-4 text-sm font-medium text-gray-900 placeholder-gray-400 outline-none transition focus:border-purple-400 focus:bg-white focus:ring-2 focus:ring-purple-400/25"
+            placeholder="Brand deals, UGC, sponsorships\u2026"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-3 pl-11 pr-4 text-sm font-medium text-slate-900 placeholder-slate-400 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-400/20"
           />
         </div>
 
         {/* Divider */}
-        <div className="hidden h-8 w-px bg-gray-200 sm:block" aria-hidden="true" />
+        <div className="hidden h-8 w-px bg-slate-200 sm:block" aria-hidden="true" />
 
         {/* Category */}
         <div className="relative min-w-[160px]">
           <label htmlFor="hero-category" className="sr-only">Category</label>
           <svg
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-purple-400"
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
             fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
             aria-hidden="true"
           >
@@ -94,7 +94,7 @@ export function HeroSearch() {
             id="hero-category"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="w-full appearance-none rounded-xl border border-transparent bg-white/60 py-3 pl-9 pr-8 text-sm font-medium text-gray-700 outline-none transition focus:border-purple-400 focus:bg-white focus:ring-2 focus:ring-purple-400/25"
+            className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 py-3 pl-9 pr-8 text-sm font-medium text-slate-700 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-400/20"
           >
             {CATEGORIES.map((c) => (
               <option key={c} value={c}>{c}</option>
@@ -103,13 +103,13 @@ export function HeroSearch() {
         </div>
 
         {/* Divider */}
-        <div className="hidden h-8 w-px bg-gray-200 sm:block" aria-hidden="true" />
+        <div className="hidden h-8 w-px bg-slate-200 sm:block" aria-hidden="true" />
 
         {/* Country */}
         <div className="relative min-w-[150px]">
           <label htmlFor="hero-country" className="sr-only">Country</label>
           <svg
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-purple-400"
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
             fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
             aria-hidden="true"
           >
@@ -119,7 +119,7 @@ export function HeroSearch() {
             id="hero-country"
             value={country}
             onChange={(e) => setCountry(e.target.value)}
-            className="w-full appearance-none rounded-xl border border-transparent bg-white/60 py-3 pl-9 pr-8 text-sm font-medium text-gray-700 outline-none transition focus:border-purple-400 focus:bg-white focus:ring-2 focus:ring-purple-400/25"
+            className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 py-3 pl-9 pr-8 text-sm font-medium text-slate-700 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-400/20"
           >
             {COUNTRIES.map((c) => (
               <option key={c} value={c}>{c}</option>
@@ -130,7 +130,7 @@ export function HeroSearch() {
         {/* Submit */}
         <button
           type="submit"
-          className="shrink-0 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 px-7 py-3 text-sm font-bold text-white shadow-lg shadow-purple-500/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-purple-500/40 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+          className="shrink-0 rounded-xl bg-indigo-600 px-7 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-500/25 transition-all duration-200 hover:-translate-y-0.5 hover:bg-indigo-700 hover:shadow-xl hover:shadow-indigo-500/30 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
         >
           Search
         </button>
@@ -146,7 +146,7 @@ export function HeroSearch() {
               setCategory(tag);
               router.push(`/opportunities?category=${tag.toLowerCase().replace(/ /g, "-")}`);
             }}
-            className="rounded-full border border-white/30 bg-white/20 px-3.5 py-1.5 text-xs font-semibold text-white/90 backdrop-blur-sm transition hover:bg-white/30 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+            className="rounded-full border border-slate-200 bg-white/80 px-3.5 py-1.5 text-xs font-semibold text-slate-600 shadow-sm transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
           >
             {tag}
           </button>

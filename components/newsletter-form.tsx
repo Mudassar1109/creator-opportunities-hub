@@ -139,7 +139,7 @@ export function NewsletterForm({ creatorCount }: NewsletterFormProps) {
         <button
           type="submit"
           disabled={state === "loading"}
-          className="shrink-0 rounded-xl bg-white px-6 py-3.5 text-sm font-bold text-purple-700 shadow-lg transition hover:bg-gray-100 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-purple-700"
+          className="shrink-0 rounded-xl bg-white px-6 py-3.5 text-sm font-bold text-indigo-700 shadow-lg transition hover:bg-slate-100 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-indigo-700"
         >
           {state === "loading" ? (
             <span className="flex items-center gap-2">

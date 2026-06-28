@@ -38,8 +38,8 @@ export function TrustBar({
       ),
       value: totalCreators,
       label: "Active Creators",
-      color: "text-purple-600",
-      bg: "bg-purple-50",
+      color: "text-indigo-600",
+      bg: "bg-indigo-50",
     },
     {
       icon: (
@@ -67,11 +67,11 @@ export function TrustBar({
 
   return (
     <section
-      className="border-b border-gray-100 bg-white/80 backdrop-blur-sm"
+      className="border-b border-slate-100 bg-white"
       aria-label="Platform trust indicators"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <dl className="grid grid-cols-2 divide-x divide-gray-100 lg:grid-cols-4">
+        <dl className="grid grid-cols-2 divide-x divide-slate-100 lg:grid-cols-4">
           {items.map((item) => (
             <div
               key={item.label}
@@ -86,7 +86,7 @@ export function TrustBar({
                     ? `${(item.value / 1000).toFixed(0)}K+`
                     : `${item.value}+`}
                 </dd>
-                <dt className="text-[11px] font-medium text-gray-500 sm:text-xs">{item.label}</dt>
+                <dt className="text-[11px] font-medium text-slate-500 sm:text-xs">{item.label}</dt>
               </div>
             </div>
           ))}
