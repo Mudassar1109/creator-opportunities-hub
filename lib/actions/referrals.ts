@@ -1,3 +1,5 @@
+import { createClient, createServiceClient } from "@/lib/supabase/server";
+
 export interface ReferralStats {
   totalReferrals: number;
   successfulReferrals: number;
@@ -34,6 +36,7 @@ export interface LeaderboardEntry {
   xp: number;
   successfulReferrals: number;
   level: string;
+  isCurrentUser: boolean;
 }
 
 export interface ReferralHistoryEntry {
@@ -58,72 +61,300 @@ export interface ReferralData {
   currentXp: number;
   nextLevelXp: number | null;
   nextLevelName: string | null;
+  xpPerReferral: number;
 }
 
-export async function getReferralData(): Promise<ReferralData> {
+const XP_PER_REFERRAL = 500;
+
+const LEVELS: ReferralLevel[] = [
+  { name: "Bronze", minXp: 0, maxXp: 99, icon: "🥉", color: "amber", requirements: "0+ XP" },
+  { name: "Silver", minXp: 100, maxXp: 499, icon: "🥈", color: "gray", requirements: "100+ XP" },
+  { name: "Gold", minXp: 500, maxXp: 1999, icon: "🥇", color: "yellow", requirements: "500+ XP" },
+  { name: "Platinum", minXp: 2000, maxXp: 4999, icon: "💎", color: "cyan", requirements: "2,000+ XP" },
+  { name: "Diamond", minXp: 5000, maxXp: 9999, icon: "🔷", color: "blue", requirements: "5,000+ XP" },
+  { name: "Legend", minXp: 10000, maxXp: null, icon: "👑", color: "purple", requirements: "10,000+ XP" },
+];
+
+function getLevel(totalXp: number) {
+  for (let i = LEVELS.length - 1; i >= 0; i--) {
+    if (totalXp >= LEVELS[i].minXp) {
+      const nextLevel = LEVELS[i + 1];
+      return {
+        currentLevel: LEVELS[i].name,
+        nextLevelXp: nextLevel?.minXp ?? null,
+        nextLevelName: nextLevel?.name ?? null,
+      };
+    }
+  }
+  return {
+    currentLevel: LEVELS[0].name,
+    nextLevelXp: LEVELS[1].minXp,
+    nextLevelName: LEVELS[1].name,
+  };
+}
+
+function generateCode(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let code = "";
+  for (let i = 0; i < 8; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
+async function ensureReferralCode(userId: string): Promise<string> {
+  const supabase = await createClient();
+
+  const { data: existing } = await supabase
+    .from("referral_codes")
+    .select("code")
+    .eq("user_id", userId)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (existing) return existing.code;
+
+  let code = generateCode();
+  let attempts = 0;
+  while (attempts < 10) {
+    const { data: conflict } = await supabase
+      .from("referral_codes")
+      .select("id")
+      .eq("code", code)
+      .maybeSingle();
+
+    if (!conflict) break;
+    code = generateCode();
+    attempts++;
+  }
+
+  const { error } = await supabase.from("referral_codes").insert({
+    user_id: userId,
+    code,
+    is_active: true,
+  });
+
+  if (error) {
+    const { data: fallback } = await supabase
+      .from("referral_codes")
+      .select("code")
+      .eq("user_id", userId)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (fallback) return fallback.code;
+    throw error;
+  }
+
+  return code;
+}
+
+export async function getReferralData(userId: string): Promise<ReferralData> {
+  const supabase = await createClient();
+
+  const referralCode = await ensureReferralCode(userId);
+  const referralLink = `/ref/${referralCode}`;
+
+  const { data: referralsList } = await supabase
+    .from("referrals")
+    .select("status, xp_earned")
+    .eq("referrer_id", userId);
+
+  const totalReferrals = referralsList?.length ?? 0;
+  const successfulReferrals = referralsList?.filter(r => r.status === "completed").length ?? 0;
+  const pendingReferrals = referralsList?.filter(r => r.status === "pending").length ?? 0;
+  const conversionRate = totalReferrals > 0 ? Math.round((successfulReferrals / totalReferrals) * 100 * 10) / 10 : 0;
+
+  const referralXp = referralsList
+    ?.filter(r => r.status === "completed")
+    .reduce((sum, r) => sum + r.xp_earned, 0) ?? 0;
+
+  const { data: xpTransactions } = await supabase
+    .from("xp_transactions")
+    .select("xp_amount")
+    .eq("user_id", userId);
+
+  const transactionXp = xpTransactions?.reduce((sum, t) => sum + t.xp_amount, 0) ?? 0;
+  const totalXp = Math.max(referralXp, transactionXp);
+
+  const { currentLevel, nextLevelXp, nextLevelName } = getLevel(totalXp);
+
   const stats: ReferralStats = {
-    totalReferrals: 27,
-    successfulReferrals: 18,
-    pendingReferrals: 9,
-    totalXp: 4250,
-    currentLevel: "Gold",
-    conversionRate: 66.7,
+    totalReferrals,
+    successfulReferrals,
+    pendingReferrals,
+    totalXp,
+    currentLevel,
+    conversionRate,
   };
 
-  const levels: ReferralLevel[] = [
-    { name: "Bronze", minXp: 0, maxXp: 99, icon: "🥉", color: "amber", requirements: "0+ XP" },
-    { name: "Silver", minXp: 100, maxXp: 499, icon: "🥈", color: "gray", requirements: "100+ XP" },
-    { name: "Gold", minXp: 500, maxXp: 1999, icon: "🥇", color: "yellow", requirements: "500+ XP" },
-    { name: "Platinum", minXp: 2000, maxXp: 4999, icon: "💎", color: "cyan", requirements: "2,000+ XP" },
-    { name: "Diamond", minXp: 5000, maxXp: 9999, icon: "🔷", color: "blue", requirements: "5,000+ XP" },
-    { name: "Legend", minXp: 10000, maxXp: null, icon: "👑", color: "purple", requirements: "10,000+ XP" },
-  ];
+  const [achievementsResult, userAchievementsResult] = await Promise.all([
+    supabase.from("achievements").select("*").order("target_count", { ascending: true }),
+    supabase.from("user_achievements").select("achievement_id").eq("user_id", userId),
+  ]);
 
-  const achievements: Achievement[] = [
-    { id: "first", name: "First Referral", description: "Refer your first user", icon: "🎯", progress: 1, target: 1, earned: true, xpReward: 100 },
-    { id: "invite-10", name: "Invite 10 Users", description: "Refer 10 users to the platform", icon: "🌟", progress: 10, target: 10, earned: true, xpReward: 250 },
-    { id: "invite-25", name: "Invite 25 Users", description: "Refer 25 users to the platform", icon: "🔥", progress: 18, target: 25, earned: false, xpReward: 500 },
-    { id: "invite-50", name: "Invite 50 Users", description: "Refer 50 users to the platform", icon: "💫", progress: 18, target: 50, earned: false, xpReward: 1000 },
-    { id: "invite-100", name: "Invite 100 Users", description: "Refer 100 users to the platform", icon: "🏆", progress: 18, target: 100, earned: false, xpReward: 2500 },
-    { id: "invite-500", name: "Invite 500 Users", description: "Refer 500 users to the platform", icon: "👑", progress: 18, target: 500, earned: false, xpReward: 10000 },
-  ];
+  const allAchievements = achievementsResult.data ?? [];
+  let earnedIds = new Set(userAchievementsResult.data?.map(ua => ua.achievement_id) ?? []);
 
-  const leaderboard: LeaderboardEntry[] = [
-    { rank: 1, name: "Alex Rivera", avatarUrl: null, xp: 15200, successfulReferrals: 48, level: "Legend" },
-    { rank: 2, name: "Sarah Chen", avatarUrl: null, xp: 12100, successfulReferrals: 36, level: "Legend" },
-    { rank: 3, name: "Marcus Johnson", avatarUrl: null, xp: 8900, successfulReferrals: 29, level: "Diamond" },
-    { rank: 4, name: "Emily Watson", avatarUrl: null, xp: 7200, successfulReferrals: 24, level: "Diamond" },
-    { rank: 5, name: "David Kim", avatarUrl: null, xp: 5800, successfulReferrals: 19, level: "Diamond" },
-    { rank: 6, name: "You", avatarUrl: null, xp: 4250, successfulReferrals: 18, level: "Gold" },
-    { rank: 7, name: "Lisa Thompson", avatarUrl: null, xp: 3900, successfulReferrals: 15, level: "Platinum" },
-    { rank: 8, name: "James Brown", avatarUrl: null, xp: 2800, successfulReferrals: 12, level: "Platinum" },
-    { rank: 9, name: "Amanda Garcia", avatarUrl: null, xp: 1900, successfulReferrals: 8, level: "Gold" },
-    { rank: 10, name: "Chris Martinez", avatarUrl: null, xp: 1100, successfulReferrals: 5, level: "Gold" },
-  ];
+  const achievementsToUnlock = allAchievements.filter(
+    a => !earnedIds.has(a.id) && successfulReferrals >= a.target_count
+  );
 
-  const history: ReferralHistoryEntry[] = [
-    { id: "1", name: "Olivia Parker", email: "olivia@example.com", avatarUrl: null, role: "creator", status: "completed", joinedDate: "2026-06-25", xpEarned: 500 },
-    { id: "2", name: "Ethan Brooks", email: "ethan@example.com", avatarUrl: null, role: "brand", status: "completed", joinedDate: "2026-06-23", xpEarned: 750 },
-    { id: "3", name: "Sophia Adams", email: "sophia@example.com", avatarUrl: null, role: "creator", status: "active", joinedDate: "2026-06-20", xpEarned: 200 },
-    { id: "4", name: "Liam Foster", email: "liam@example.com", avatarUrl: null, role: "brand", status: "completed", joinedDate: "2026-06-18", xpEarned: 750 },
-    { id: "5", name: "Isabella Reed", email: "isabella@example.com", avatarUrl: null, role: "creator", status: "active", joinedDate: "2026-06-15", xpEarned: 200 },
-    { id: "6", name: "Noah Mitchell", email: "noah@example.com", avatarUrl: null, role: "brand", status: "completed", joinedDate: "2026-06-12", xpEarned: 750 },
-    { id: "7", name: "Mia Cooper", email: "mia@example.com", avatarUrl: null, role: "creator", status: "pending", joinedDate: "2026-06-10", xpEarned: 0 },
-    { id: "8", name: "Lucas Hayes", email: "lucas@example.com", avatarUrl: null, role: "brand", status: "active", joinedDate: "2026-06-08", xpEarned: 200 },
-    { id: "9", name: "Ava Morgan", email: "ava@example.com", avatarUrl: null, role: "creator", status: "completed", joinedDate: "2026-06-05", xpEarned: 500 },
-    { id: "10", name: "Jackson Lee", email: "jackson@example.com", avatarUrl: null, role: "brand", status: "completed", joinedDate: "2026-06-03", xpEarned: 750 },
-  ];
+  if (achievementsToUnlock.length > 0) {
+    const newEntries = achievementsToUnlock.map(a => ({
+      user_id: userId,
+      achievement_id: a.id,
+    }));
+
+    const { error: insertError } = await supabase
+      .from("user_achievements")
+      .insert(newEntries);
+
+    if (!insertError) {
+      const xpRewardEntries = achievementsToUnlock.map(a => ({
+        user_id: userId,
+        xp_amount: a.xp_reward,
+        reason: `Achievement unlocked: ${a.name}`,
+      }));
+
+      await supabase.from("xp_transactions").insert(xpRewardEntries);
+
+      const { data: updatedUa } = await supabase
+        .from("user_achievements")
+        .select("achievement_id")
+        .eq("user_id", userId);
+
+      if (updatedUa) {
+        earnedIds = new Set(updatedUa.map(ua => ua.achievement_id));
+      }
+    }
+  }
+
+  const achievements: Achievement[] = allAchievements.map(a => ({
+    id: a.id,
+    name: a.name,
+    description: a.description,
+    icon: a.icon || "🎯",
+    progress: Math.min(successfulReferrals, a.target_count),
+    target: a.target_count,
+    earned: earnedIds.has(a.id),
+    xpReward: a.xp_reward,
+  }));
+
+  const { data: leaderboardData } = await supabase
+    .from("leaderboard")
+    .select("*")
+    .order("rank", { ascending: true })
+    .limit(10);
+
+  const leaderboardUserIds = [...new Set((leaderboardData ?? []).map(l => l.user_id))];
+
+  const leaderboardProfilesMap = new Map<string, { full_name: string; avatar_url: string | null }>();
+  if (leaderboardUserIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, full_name, avatar_url")
+      .in("id", leaderboardUserIds);
+
+    if (profiles) {
+      for (const p of profiles) {
+        leaderboardProfilesMap.set(p.id, { full_name: p.full_name, avatar_url: p.avatar_url });
+      }
+    }
+  }
+
+  const leaderboard: LeaderboardEntry[] = (leaderboardData ?? [])
+    .filter(l => l.rank !== null)
+    .map(l => {
+      const profile = leaderboardProfilesMap.get(l.user_id);
+      const { currentLevel: level } = getLevel(l.total_xp);
+      return {
+        rank: l.rank!,
+        name: profile?.full_name ?? "Unknown",
+        avatarUrl: profile?.avatar_url ?? null,
+        xp: l.total_xp,
+        successfulReferrals: l.successful_refs,
+        level,
+        isCurrentUser: l.user_id === userId,
+      };
+    })
+    .sort((a, b) => a.rank - b.rank);
+
+  const { data: historyData } = await supabase
+    .from("referrals")
+    .select("id, referred_id, status, xp_earned, created_at")
+    .eq("referrer_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  const referredIds = [...new Set(historyData?.map(r => r.referred_id) ?? [])];
+
+  const referredProfilesMap = new Map<string, { full_name: string; email: string; avatar_url: string | null; role: "creator" | "brand" }>();
+  if (referredIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, full_name, email, avatar_url, role")
+      .in("id", referredIds);
+
+    if (profiles) {
+      for (const p of profiles) {
+        referredProfilesMap.set(p.id, {
+          full_name: p.full_name,
+          email: p.email,
+          avatar_url: p.avatar_url,
+          role: p.role as "creator" | "brand",
+        });
+      }
+    }
+  }
+
+  const history: ReferralHistoryEntry[] = (historyData ?? []).map(r => {
+    const profile = referredProfilesMap.get(r.referred_id);
+    return {
+      id: r.id,
+      name: profile?.full_name ?? "Unknown",
+      email: profile?.email ?? "",
+      avatarUrl: profile?.avatar_url ?? null,
+      role: profile?.role ?? "creator",
+      status: r.status as "pending" | "active" | "completed",
+      joinedDate: r.created_at.split("T")[0],
+      xpEarned: r.xp_earned,
+    };
+  });
 
   return {
     stats,
-    referralCode: "CREATOR2026",
-    referralLink: "https://creatorhub.com/ref/CREATOR2026",
-    levels,
+    referralCode,
+    referralLink,
+    levels: LEVELS,
     achievements,
     leaderboard,
     history,
-    currentXp: 4250,
-    nextLevelXp: 4999,
-    nextLevelName: "Platinum",
+    currentXp: totalXp,
+    nextLevelXp,
+    nextLevelName,
+    xpPerReferral: XP_PER_REFERRAL,
+  };
+}
+
+export interface ReferralLandingStats {
+  activeCreators: number;
+  brandPartners: number;
+  activeOpportunities: number;
+}
+
+export async function getReferralLandingStats(): Promise<ReferralLandingStats> {
+  const supabase = createServiceClient();
+
+  const [{ count: creatorCount }, { count: brandCount }, { count: opportunityCount }] = await Promise.all([
+    supabase.from("profiles").select("*", { count: "exact", head: true }).eq("role", "creator"),
+    supabase.from("brands").select("*", { count: "exact", head: true }),
+    supabase.from("opportunities").select("*", { count: "exact", head: true }).eq("status", "active"),
+  ]);
+
+  return {
+    activeCreators: creatorCount ?? 0,
+    brandPartners: brandCount ?? 0,
+    activeOpportunities: opportunityCount ?? 0,
   };
 }

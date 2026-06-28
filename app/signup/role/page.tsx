@@ -1,13 +1,16 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 export default function RoleSelectionPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const refCode = searchParams.get("ref");
 
   function handleRoleSelect(role: "creator" | "brand") {
-    router.push(`/signup?role=${role}`);
+    const params = new URLSearchParams(`role=${role}${refCode ? `&ref=${refCode}` : ""}`);
+    router.push(`/signup?${params.toString()}`);
   }
 
   return (

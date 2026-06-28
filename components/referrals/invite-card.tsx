@@ -3,6 +3,7 @@
 interface Props {
   referralLink: string;
   referralCode: string;
+  xpPerReferral: number;
 }
 
 const sharePlatforms = [
@@ -48,9 +49,11 @@ const sharePlatforms = [
   },
 ];
 
-export function InviteCard({ referralLink, referralCode }: Props) {
+export function InviteCard({ referralLink, referralCode, xpPerReferral }: Props) {
+  const fullUrl = typeof window !== "undefined" ? `${window.location.origin}${referralLink}` : referralLink;
+
   const share = (platform: typeof sharePlatforms[number]) => {
-    const url = platform.href(referralLink, referralCode);
+    const url = platform.href(fullUrl, referralCode);
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
@@ -78,7 +81,7 @@ export function InviteCard({ referralLink, referralCode }: Props) {
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <p className="text-xs text-gray-600 dark:text-gray-400">
-            You earn <span className="font-semibold text-purple-600 dark:text-purple-400">500 XP</span> for each successful referral!
+            You earn <span className="font-semibold text-purple-600 dark:text-purple-400">{xpPerReferral.toLocaleString()} XP</span> for each successful referral!
           </p>
         </div>
       </div>

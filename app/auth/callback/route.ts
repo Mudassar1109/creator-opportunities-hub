@@ -11,11 +11,12 @@
  */
 
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
+  const refCode = requestUrl.searchParams.get("ref");
   const roleParam = requestUrl.searchParams.get("role") as "creator" | "brand" | null;
   const error = requestUrl.searchParams.get("error");
   const errorDescription = requestUrl.searchParams.get("error_description");
@@ -97,6 +98,48 @@ export async function GET(request: Request) {
 
         if (updateError) {
           console.error("[Auth Callback] Failed to set profile role:", updateError);
+        }
+      }
+
+      // Process referral code if present
+      if (refCode) {
+        try {
+          const serviceClient = createServiceClient();
+          const { data: referralCode } = await serviceClient
+            .from("referral_codes")
+            .select("id, user_id, is_active")
+            .eq("code", refCode)
+            .maybeSingle();
+
+          if (referralCode && referralCode.is_active && referralCode.user_id !== user.id) {
+            const { data: existingReferral } = await serviceClient
+              .from("referrals")
+              .select("id")
+              .eq("referrer_id", referralCode.user_id)
+              .eq("referred_id", user.id)
+              .maybeSingle();
+
+            if (!existingReferral) {
+              const { error: referralError } = await serviceClient
+                .from("referrals")
+                .insert({
+                  referrer_id: referralCode.user_id,
+                  referred_id: user.id,
+                  referral_code_id: referralCode.id,
+                  status: "active",
+                  xp_earned: 0,
+                });
+
+              if (referralError) {
+                console.error("[Auth Callback] Failed to insert referral:", referralError);
+              } else {
+                console.log("[Auth Callback] Referral created successfully");
+              }
+            }
+          }
+        } catch {
+          // Service client may not be configured or tables may not exist
+          console.warn("[Auth Callback] Could not process referral code:", refCode);
         }
       }
 

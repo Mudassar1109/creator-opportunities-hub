@@ -69,6 +69,7 @@ function SignupPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const roleParam = searchParams.get("role") as "creator" | "brand" | null;
+  const refCode = searchParams.get("ref") || "";
   const role = roleParam ?? "creator";
 
   const [fullName, setFullName] = useState("");
@@ -121,7 +122,7 @@ function SignupPageContent() {
           username: email.trim().split("@")[0],
           role: role,
         },
-        emailRedirectTo: `${window.location.origin}/auth/callback?role=${role}`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?role=${role}${refCode ? `&ref=${refCode}` : ""}`,
       },
     });
 
@@ -149,7 +150,7 @@ function SignupPageContent() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?role=${role}`,
+        redirectTo: `${window.location.origin}/auth/callback?role=${role}${refCode ? `&ref=${refCode}` : ""}`,
         queryParams: {
           role: role,
         },

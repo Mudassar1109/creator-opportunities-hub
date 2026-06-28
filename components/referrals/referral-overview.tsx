@@ -29,7 +29,7 @@ export function ReferralOverview({ data }: Props) {
           nextLevelName={data.nextLevelName}
         />
         <LeaderboardCard leaderboard={data.leaderboard} />
-        <InviteCard referralLink={data.referralLink} referralCode={data.referralCode} />
+        <InviteCard referralLink={data.referralLink} referralCode={data.referralCode} xpPerReferral={data.xpPerReferral} />
       </div>
     </div>
   );

@@ -9,6 +9,7 @@ interface Props {
 
 export function ReferralLinkCard({ code, link }: Props) {
   const [copied, setCopied] = useState(false);
+  const fullUrl = typeof window !== "undefined" ? `${window.location.origin}${link}` : link;
 
   const handleCopy = async (text: string) => {
     try {
@@ -19,6 +20,24 @@ export function ReferralLinkCard({ code, link }: Props) {
       // fallback for environments without clipboard API
     }
   };
+
+  if (!code) {
+    return (
+      <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6">
+        <div className="flex flex-col items-center justify-center py-6">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-purple-50 dark:bg-purple-900/20 mb-4">
+            <svg className="h-7 w-7 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.86-2.57a4.5 4.5 0 00-1.242-7.244l-4.5-4.5a4.5 4.5 0 00-6.364 6.364L4.34 8.172" />
+            </svg>
+          </div>
+          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">No referral code yet</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center max-w-xs">
+            A unique referral code will be generated automatically for you.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6">
@@ -31,7 +50,7 @@ export function ReferralLinkCard({ code, link }: Props) {
       <div className="flex items-center gap-2 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 px-4 py-3">
         <span className="flex-1 truncate text-sm text-gray-600 dark:text-gray-400 font-mono">{link}</span>
         <button
-          onClick={() => handleCopy(link)}
+          onClick={() => handleCopy(fullUrl)}
           className="inline-flex items-center gap-1.5 rounded-lg bg-purple-600 px-3.5 py-2 text-xs font-semibold text-white transition-all hover:bg-purple-700"
         >
           {copied ? (
