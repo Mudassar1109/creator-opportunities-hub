@@ -62,6 +62,10 @@ export type NotificationType =
   | "application_rejected"
   | "message_received";
 
+export type ReportStatus = "pending" | "under_review" | "resolved" | "dismissed";
+export type ReportCategory = "spam" | "harassment" | "fake" | "violation" | "other";
+export type ReferralStatus = "pending" | "active" | "completed";
+
 // ─── Tables ─────────────────────────────────────────────────
 
 export interface Database {
@@ -581,6 +585,358 @@ export interface Database {
           },
         ];
       };
+
+      reports: {
+        Row: {
+          id: string;
+          reporter_id: string;
+          reported_type: string;
+          reported_id: string;
+          report_type: string;
+          reason: string;
+          status: ReportStatus;
+          reviewed_by: string | null;
+          reviewed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          reporter_id: string;
+          reported_type: string;
+          reported_id: string;
+          report_type: string;
+          reason: string;
+          status?: ReportStatus;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          status?: ReportStatus;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "reports_reporter_id_fkey";
+            columns: ["reporter_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+
+      platform_settings: {
+        Row: {
+          id: string;
+          site_name: string;
+          logo_url: string;
+          favicon_url: string;
+          support_email: string;
+          phone: string;
+          address: string;
+          creator_registration_open: boolean;
+          brand_registration_open: boolean;
+          maintenance_mode: boolean;
+          admin_only_mode: boolean;
+          reply_email: string;
+          notification_email: string;
+          facebook: string;
+          instagram: string;
+          linkedin: string;
+          x: string;
+          youtube: string;
+          meta_title: string;
+          meta_description: string;
+          keywords: string;
+          og_image: string;
+          referral_enabled: boolean;
+          blog_enabled: boolean;
+          notifications_enabled: boolean;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          site_name?: string;
+          logo_url?: string;
+          favicon_url?: string;
+          support_email?: string;
+          phone?: string;
+          address?: string;
+          creator_registration_open?: boolean;
+          brand_registration_open?: boolean;
+          maintenance_mode?: boolean;
+          admin_only_mode?: boolean;
+          reply_email?: string;
+          notification_email?: string;
+          facebook?: string;
+          instagram?: string;
+          linkedin?: string;
+          x?: string;
+          youtube?: string;
+          meta_title?: string;
+          meta_description?: string;
+          keywords?: string;
+          og_image?: string;
+          referral_enabled?: boolean;
+          blog_enabled?: boolean;
+          notifications_enabled?: boolean;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          site_name?: string;
+          logo_url?: string;
+          favicon_url?: string;
+          support_email?: string;
+          phone?: string;
+          address?: string;
+          creator_registration_open?: boolean;
+          brand_registration_open?: boolean;
+          maintenance_mode?: boolean;
+          admin_only_mode?: boolean;
+          reply_email?: string;
+          notification_email?: string;
+          facebook?: string;
+          instagram?: string;
+          linkedin?: string;
+          x?: string;
+          youtube?: string;
+          meta_title?: string;
+          meta_description?: string;
+          keywords?: string;
+          og_image?: string;
+          referral_enabled?: boolean;
+          blog_enabled?: boolean;
+          notifications_enabled?: boolean;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
+
+      analytics_events: {
+        Row: {
+          id: string;
+          event_type: string;
+          event_data: any;
+          user_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          event_type: string;
+          event_data?: any;
+          user_id?: string | null;
+          created_at?: string;
+        };
+        Update: {};
+        Relationships: [];
+      };
+
+      referral_codes: {
+        Row: {
+          id: string;
+          user_id: string;
+          code: string;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          code: string;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          code?: string;
+          is_active?: boolean;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "referral_codes_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+
+      referrals: {
+        Row: {
+          id: string;
+          referrer_id: string;
+          referred_id: string;
+          referral_code_id: string;
+          status: ReferralStatus;
+          xp_earned: number;
+          completed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          referrer_id: string;
+          referred_id: string;
+          referral_code_id: string;
+          status?: ReferralStatus;
+          xp_earned?: number;
+          completed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          status?: ReferralStatus;
+          xp_earned?: number;
+          completed_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "referrals_referrer_id_fkey";
+            columns: ["referrer_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "referrals_referred_id_fkey";
+            columns: ["referred_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+
+      xp_transactions: {
+        Row: {
+          id: string;
+          user_id: string;
+          xp_amount: number;
+          reason: string;
+          referral_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          xp_amount: number;
+          reason: string;
+          referral_id?: string | null;
+          created_at?: string;
+        };
+        Update: {};
+        Relationships: [
+          {
+            foreignKeyName: "xp_transactions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"],
+          },
+        ];
+      };
+
+      achievements: {
+        Row: {
+          id: string;
+          name: string;
+          description: string;
+          icon: string;
+          target_count: number;
+          xp_reward: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          description: string;
+          icon?: string;
+          target_count: number;
+          xp_reward?: number;
+          created_at?: string;
+        };
+        Update: {
+          name?: string;
+          description?: string;
+          icon?: string;
+          target_count?: number;
+          xp_reward?: number;
+        };
+        Relationships: [];
+      };
+
+      user_achievements: {
+        Row: {
+          id: string;
+          user_id: string;
+          achievement_id: string;
+          earned_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          achievement_id: string;
+          earned_at?: string;
+        };
+        Update: {};
+        Relationships: [
+          {
+            foreignKeyName: "user_achievements_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"],
+          },
+          {
+            foreignKeyName: "user_achievements_achievement_id_fkey";
+            columns: ["achievement_id"];
+            isOneToOne: false;
+            referencedRelation: "achievements";
+            referencedColumns: ["id"],
+          },
+        ];
+      };
+
+      leaderboard: {
+        Row: {
+          id: string;
+          user_id: string;
+          total_xp: number;
+          successful_refs: number;
+          rank: number | null;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          total_xp?: number;
+          successful_refs?: number;
+          rank?: number | null;
+          updated_at?: string;
+        };
+        Update: {
+          total_xp?: number;
+          successful_refs?: number;
+          rank?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "leaderboard_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"],
+          },
+        ];
+      };
     };
 
     Views: {
@@ -701,6 +1057,9 @@ export interface Database {
       company_size: CompanySize;
       user_role: UserRole;
       notification_type: NotificationType;
+      report_status: ReportStatus;
+      report_category: ReportCategory;
+      referral_status: ReferralStatus;
     };
   };
 }

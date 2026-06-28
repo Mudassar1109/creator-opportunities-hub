@@ -3,6 +3,146 @@
 import { createClient, getUser } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { createNotification } from "./notifications";
+import type { Database } from "@/lib/database.types";
+
+// ─── Helper: format a raw conversation row into a summary ──
+interface ConversationSummary {
+  id: string;
+  application_id: string;
+  creator_id: string;
+  brand_id: string;
+  created_at: string;
+  opportunity_title: string;
+  other_party_name: string;
+  other_party_avatar: string | null;
+  last_message: string | null;
+  last_message_time: string | null;
+  unread_count: number;
+}
+
+interface ConversationRow {
+  id: string;
+  application_id: string;
+  creator_id: string;
+  brand_id: string;
+  created_at: string;
+  applications: {
+    opportunity_id: string;
+    opportunities: { title: string } | null;
+    creator_id?: string;
+    profiles?: { full_name: string; avatar_url: string | null } | null;
+  } | null;
+  brands: { company_name: string } | null;
+  messages: {
+    id: string;
+    message: string;
+    sender_id: string;
+    is_read: boolean;
+    created_at: string;
+  }[];
+}
+
+async function formatConversation(
+  conv: ConversationRow,
+  userId: string
+): Promise<ConversationSummary> {
+  const msgs = conv.messages ?? [];
+  const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null;
+  const app = conv.applications;
+  const opp = app?.opportunities;
+  const brand = conv.brands;
+  const profile = app?.profiles;
+
+  const isCreator = conv.creator_id === userId;
+  const otherName = isCreator
+    ? brand?.company_name ?? "Brand"
+    : profile?.full_name ?? "Creator";
+  const otherAvatar = isCreator ? null : profile?.avatar_url ?? null;
+
+  const unread_count = msgs.filter(
+    (m) => m.sender_id !== userId && !m.is_read
+  ).length;
+
+  return {
+    id: conv.id,
+    application_id: conv.application_id,
+    creator_id: conv.creator_id,
+    brand_id: conv.brand_id,
+    created_at: conv.created_at,
+    opportunity_title: opp?.title ?? "Opportunity",
+    other_party_name: otherName,
+    other_party_avatar: otherAvatar,
+    last_message: lastMsg?.message ?? null,
+    last_message_time: lastMsg?.created_at ?? null,
+    unread_count,
+  };
+}
+
+// ─── Get formatted conversation summaries for the current user ──
+export async function getUserConversations(): Promise<{
+  data: ConversationSummary[] | null;
+  error: string | null;
+}> {
+  const user = await getUser();
+  if (!user) return { data: null, error: "Not authenticated" };
+
+  const supabase = await createClient();
+
+  const { data: creatorConvs, error: err1 } = await supabase
+    .from("conversations")
+    .select(
+      `id, application_id, creator_id, brand_id, created_at,
+       applications(opportunity_id, opportunities(title)),
+       brands(company_name),
+       messages(id, message, sender_id, is_read, created_at)`
+    )
+    .eq("creator_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (err1) return { data: null, error: err1.message };
+
+  const { data: userBrands } = await supabase
+    .from("brands")
+    .select("id")
+    .eq("user_id", user.id);
+
+  const brandIds = userBrands?.map((b) => b.id) ?? [];
+  let brandConvs: ConversationRow[] = [];
+  if (brandIds.length > 0) {
+    const { data, error: err2 } = await supabase
+      .from("conversations")
+      .select(
+        `id, application_id, creator_id, brand_id, created_at,
+         applications(opportunity_id, creator_id, opportunities(title), profiles(full_name, avatar_url)),
+         brands(company_name),
+         messages(id, message, sender_id, is_read, created_at)`
+      )
+      .in("brand_id", brandIds)
+      .order("created_at", { ascending: false });
+    if (err2) return { data: null, error: err2.message };
+    brandConvs = data ?? [];
+  }
+
+  const allConvs = [...(creatorConvs ?? []), ...brandConvs];
+  const seen = new Set<string>();
+  const unique = allConvs.filter((c) => {
+    if (seen.has(c.id)) return false;
+    seen.add(c.id);
+    return true;
+  });
+
+  const formatted = await Promise.all(
+    unique.map((c) => formatConversation(c, user.id))
+  );
+
+  formatted.sort((a, b) => {
+    const aTime = a.last_message_time ?? a.created_at;
+    const bTime = b.last_message_time ?? b.created_at;
+    return new Date(bTime).getTime() - new Date(aTime).getTime();
+  });
+
+  return { data: formatted, error: null };
+}
 
 // ─── Get user's conversations with last message ─────────────
 export async function getConversations() {

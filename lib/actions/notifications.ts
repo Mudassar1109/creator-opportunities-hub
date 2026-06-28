@@ -4,6 +4,10 @@ import { createClient, getUser } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { NotificationType } from "@/lib/database.types";
 
+function isValidType(s: string): s is NotificationType {
+  return ["application_submitted", "application_reviewed", "application_accepted", "application_rejected", "message_received"].includes(s);
+}
+
 // ─── Internal helper: create a notification ─────────────────
 // Uses SECURITY DEFINER function to create notifications for other users
 export async function createNotification(
@@ -108,6 +112,46 @@ export async function markNotificationAsRead(
     console.log("[markNotificationAsRead] Exception:", err);
     return { success: false, error: "Failed to mark notification as read." };
   }
+}
+
+// ─── Search/filter notifications ─────────────────────────────
+export async function searchNotifications(options?: {
+  search?: string;
+  type?: string;
+  limit?: number;
+}) {
+  const user = await getUser();
+  if (!user) return { data: null, error: "Not authenticated" };
+
+  const supabase = await createClient();
+
+  let query = supabase
+    .from("notifications")
+    .select("*")
+    .eq("user_id", user.id);
+
+  if (options?.type && options.type !== "all") {
+    if (isValidType(options.type)) {
+      query = query.eq("type", options.type);
+    }
+  }
+
+  if (options?.search) {
+    query = query.or(
+      `title.ilike.%${options.search}%,message.ilike.%${options.search}%`
+    );
+  }
+
+  const { data, error } = await query
+    .order("created_at", { ascending: false })
+    .limit(options?.limit ?? 50);
+
+  if (error) {
+    console.log("[searchNotifications] Error:", error.message);
+    return { data: null, error: error.message };
+  }
+
+  return { data, error: null };
 }
 
 // ─── Mark all notifications as read ──────────────────────────

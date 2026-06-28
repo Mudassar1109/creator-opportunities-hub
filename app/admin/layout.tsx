@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Navbar } from "@/components/navbar";
+import { AdminNav } from "@/components/admin/admin-nav";
 
 export const metadata = {
   title: "Admin Panel | CreatorHub",
@@ -31,6 +32,7 @@ export default function AdminLayout({
             Back to Dashboard
           </Link>
         </div>
+        <AdminNav />
         {children}
       </div>
     </div>

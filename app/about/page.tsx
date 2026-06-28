@@ -131,7 +131,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Team placeholder */}
       <section className="px-4 py-20 sm:px-6 sm:py-24 lg:px-8" aria-labelledby="team-heading">
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto mb-14 max-w-2xl text-center">

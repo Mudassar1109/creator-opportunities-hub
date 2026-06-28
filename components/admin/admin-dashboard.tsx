@@ -290,10 +290,10 @@ export async function AdminDashboard({ user, adminRole }: Props) {
           <h2 className="mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">Quick Actions</h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {[
-              { title: "View All Users", desc: "Browse platform users and their roles", href: "#", from: "from-purple-600", to: "to-cyan-500" },
-              { title: "View All Brands", desc: "See all brand accounts and their status", href: "#", from: "from-cyan-600", to: "to-cyan-400" },
-              { title: "View Opportunities", desc: "Monitor all platform opportunities", href: "#", from: "from-purple-700", to: "to-purple-500" },
-              { title: "View Applications", desc: "Review pending and submitted applications", href: "#", from: "from-amber-600", to: "to-amber-400" },
+              { title: "View All Users", desc: "Browse platform users and their roles", href: "/admin/users", from: "from-purple-600", to: "to-cyan-500" },
+              { title: "View All Brands", desc: "See all brand accounts and their status", href: "/admin/brands", from: "from-cyan-600", to: "to-cyan-400" },
+              { title: "View Opportunities", desc: "Monitor all platform opportunities", href: "/admin/opportunities", from: "from-purple-700", to: "to-purple-500" },
+              { title: "View Applications", desc: "Review pending and submitted applications", href: "/admin/applications", from: "from-amber-600", to: "to-amber-400" },
             ].map((action) => (
               <Link
                 key={action.title}

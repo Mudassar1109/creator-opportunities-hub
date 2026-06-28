@@ -929,7 +929,311 @@ CREATE POLICY "avatars_delete_own"
   );
 
 -- ============================================================
--- 10. USEFUL FUNCTIONS
+-- 10. NEW TABLES (Phase 12)
+-- ============================================================
+
+-- ──────────────────────────────────────────────
+-- 10a. REPORTS
+-- ──────────────────────────────────────────────
+
+CREATE TABLE public.reports (
+  id              uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  reporter_id     uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  reported_type   text NOT NULL CHECK (reported_type IN ('user', 'brand', 'opportunity', 'message')),
+  reported_id     uuid NOT NULL,
+  report_type     text NOT NULL CHECK (report_type IN ('spam', 'harassment', 'fake', 'violation', 'other')),
+  reason          text NOT NULL CHECK (char_length(reason) <= 2000),
+  status          text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'under_review', 'resolved', 'dismissed')),
+  reviewed_by     uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  reviewed_at     timestamptz,
+  created_at      timestamptz DEFAULT now() NOT NULL,
+  updated_at      timestamptz DEFAULT now() NOT NULL
+);
+
+COMMENT ON TABLE public.reports IS 'User-generated reports for moderation';
+
+CREATE TRIGGER set_reports_updated_at
+  BEFORE UPDATE ON public.reports
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+CREATE INDEX idx_reports_status       ON public.reports (status);
+CREATE INDEX idx_reports_reporter_id  ON public.reports (reporter_id);
+CREATE INDEX idx_reports_reported_type ON public.reports (reported_type);
+CREATE INDEX idx_reports_created      ON public.reports (created_at DESC);
+
+ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
+
+-- Admins (via service_role) can read all reports
+CREATE POLICY "reports_select_admin"
+  ON public.reports FOR SELECT
+  TO service_role
+  USING (true);
+
+-- Authenticated users can create reports
+CREATE POLICY "reports_insert_auth"
+  ON public.reports FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = reporter_id);
+
+-- Service role can update reports (admin moderation)
+CREATE POLICY "reports_update_service"
+  ON public.reports FOR UPDATE
+  TO service_role
+  USING (true)
+  WITH CHECK (true);
+
+-- ──────────────────────────────────────────────
+-- 10b. PLATFORM SETTINGS
+-- ──────────────────────────────────────────────
+
+CREATE TABLE public.platform_settings (
+  id                        uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  site_name                 text NOT NULL DEFAULT 'Creator Opportunities Hub',
+  logo_url                  text DEFAULT '',
+  favicon_url               text DEFAULT '',
+  support_email             text DEFAULT '',
+  phone                     text DEFAULT '',
+  address                   text DEFAULT '',
+  creator_registration_open boolean DEFAULT true,
+  brand_registration_open   boolean DEFAULT true,
+  maintenance_mode          boolean DEFAULT false,
+  admin_only_mode           boolean DEFAULT false,
+  reply_email               text DEFAULT '',
+  notification_email        text DEFAULT '',
+  facebook                  text DEFAULT '',
+  instagram                 text DEFAULT '',
+  linkedin                  text DEFAULT '',
+  x                         text DEFAULT '',
+  youtube                   text DEFAULT '',
+  meta_title                text DEFAULT '',
+  meta_description          text DEFAULT '',
+  keywords                  text DEFAULT '',
+  og_image                  text DEFAULT '',
+  referral_enabled          boolean DEFAULT true,
+  blog_enabled              boolean DEFAULT false,
+  notifications_enabled     boolean DEFAULT true,
+  updated_at                timestamptz DEFAULT now() NOT NULL,
+  updated_by                uuid REFERENCES auth.users(id) ON DELETE SET NULL
+);
+
+COMMENT ON TABLE public.platform_settings IS 'Singleton table for platform-wide settings';
+
+CREATE TRIGGER set_platform_settings_updated_at
+  BEFORE UPDATE ON public.platform_settings
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+ALTER TABLE public.platform_settings ENABLE ROW LEVEL SECURITY;
+
+-- Service role can read settings
+CREATE POLICY "settings_select_service"
+  ON public.platform_settings FOR SELECT
+  TO service_role
+  USING (true);
+
+-- Service role can update settings
+CREATE POLICY "settings_update_service"
+  ON public.platform_settings FOR UPDATE
+  TO service_role
+  USING (true)
+  WITH CHECK (true);
+
+-- Seed default settings row
+INSERT INTO public.platform_settings (id, site_name, support_email, reply_email, notification_email)
+VALUES (uuid_generate_v4(), 'Creator Opportunities Hub',
+  'support@creatoropportunitieshub.com',
+  'noreply@creatoropportunitieshub.com',
+  'notifications@creatoropportunitieshub.com')
+ON CONFLICT DO NOTHING;
+
+-- ──────────────────────────────────────────────
+-- 10c. ANALYTICS TIME-SERIES
+-- ──────────────────────────────────────────────
+
+CREATE TABLE public.analytics_events (
+  id          uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  event_type  text NOT NULL,
+  event_data  jsonb DEFAULT '{}',
+  user_id     uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at  timestamptz DEFAULT now() NOT NULL
+);
+
+COMMENT ON TABLE public.analytics_events IS 'Time-series analytics events for dashboard charts';
+
+CREATE INDEX idx_analytics_events_type    ON public.analytics_events (event_type);
+CREATE INDEX idx_analytics_events_created ON public.analytics_events (created_at DESC);
+CREATE INDEX idx_analytics_events_date    ON public.analytics_events (date_trunc('day', created_at));
+
+ALTER TABLE public.analytics_events ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "analytics_select_service"
+  ON public.analytics_events FOR SELECT
+  TO service_role
+  USING (true);
+
+CREATE POLICY "analytics_insert_auth"
+  ON public.analytics_events FOR INSERT
+  TO authenticated
+  WITH CHECK (true);
+
+-- ──────────────────────────────────────────────
+-- 10d. REFERRAL SYSTEM
+-- ──────────────────────────────────────────────
+
+CREATE TABLE public.referral_codes (
+  id          uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id     uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  code        text UNIQUE NOT NULL CHECK (char_length(code) >= 4),
+  is_active   boolean DEFAULT true,
+  created_at  timestamptz DEFAULT now() NOT NULL,
+  updated_at  timestamptz DEFAULT now() NOT NULL
+);
+
+COMMENT ON TABLE public.referral_codes IS 'Unique referral codes per user';
+
+CREATE TRIGGER set_referral_codes_updated_at
+  BEFORE UPDATE ON public.referral_codes
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+CREATE INDEX idx_referral_codes_user ON public.referral_codes (user_id);
+CREATE INDEX idx_referral_codes_code ON public.referral_codes (code);
+
+ALTER TABLE public.referral_codes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "ref_codes_select_own"
+  ON public.referral_codes FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "ref_codes_insert_own"
+  ON public.referral_codes FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE TABLE public.referrals (
+  id                  uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  referrer_id         uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  referred_id         uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  referral_code_id    uuid NOT NULL REFERENCES public.referral_codes(id) ON DELETE CASCADE,
+  status              text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'active', 'completed')),
+  xp_earned           int DEFAULT 0 CHECK (xp_earned >= 0),
+  completed_at        timestamptz,
+  created_at          timestamptz DEFAULT now() NOT NULL,
+  updated_at          timestamptz DEFAULT now() NOT NULL,
+  CONSTRAINT unique_referral UNIQUE (referrer_id, referred_id)
+);
+
+COMMENT ON TABLE public.referrals IS 'Referral tracking records';
+
+CREATE TRIGGER set_referrals_updated_at
+  BEFORE UPDATE ON public.referrals
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+CREATE INDEX idx_referrals_referrer  ON public.referrals (referrer_id);
+CREATE INDEX idx_referrals_referred  ON public.referrals (referred_id);
+CREATE INDEX idx_referrals_status    ON public.referrals (status);
+
+ALTER TABLE public.referrals ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "referrals_select_own"
+  ON public.referrals FOR SELECT
+  USING (auth.uid() = referrer_id OR auth.uid() = referred_id);
+
+CREATE POLICY "referrals_insert_auth"
+  ON public.referrals FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = referrer_id);
+
+CREATE TABLE public.xp_transactions (
+  id            uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id       uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  xp_amount     int NOT NULL CHECK (xp_amount != 0),
+  reason        text NOT NULL,
+  referral_id   uuid REFERENCES public.referrals(id) ON DELETE SET NULL,
+  created_at    timestamptz DEFAULT now() NOT NULL
+);
+
+COMMENT ON TABLE public.xp_transactions IS 'XP earn/spend ledger for referral rewards';
+
+CREATE INDEX idx_xp_transactions_user ON public.xp_transactions (user_id);
+CREATE INDEX idx_xp_transactions_created ON public.xp_transactions (created_at DESC);
+
+ALTER TABLE public.xp_transactions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "xp_select_own"
+  ON public.xp_transactions FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE TABLE public.achievements (
+  id            uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name          text UNIQUE NOT NULL,
+  description   text NOT NULL,
+  icon          text DEFAULT '',
+  target_count  int NOT NULL CHECK (target_count > 0),
+  xp_reward     int NOT NULL DEFAULT 0 CHECK (xp_reward >= 0),
+  created_at    timestamptz DEFAULT now() NOT NULL
+);
+
+COMMENT ON TABLE public.achievements IS 'Achievement definitions';
+
+ALTER TABLE public.achievements ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "achievements_select_all"
+  ON public.achievements FOR SELECT
+  TO authenticated
+  USING (true);
+
+-- Seed achievements
+INSERT INTO public.achievements (name, description, icon, target_count, xp_reward) VALUES
+  ('First Referral',    'Refer your first user',         '🎯', 1,   100),
+  ('Invite 10 Users',   'Refer 10 users to the platform','🌟', 10,  250),
+  ('Invite 25 Users',   'Refer 25 users to the platform','🔥', 25,  500),
+  ('Invite 50 Users',   'Refer 50 users to the platform','💫', 50,  1000),
+  ('Invite 100 Users',  'Refer 100 users to the platform','🏆', 100, 2500),
+  ('Invite 500 Users',  'Refer 500 users to the platform','👑', 500, 10000)
+ON CONFLICT (name) DO NOTHING;
+
+CREATE TABLE public.user_achievements (
+  id              uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id         uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  achievement_id  uuid NOT NULL REFERENCES public.achievements(id) ON DELETE CASCADE,
+  earned_at       timestamptz DEFAULT now() NOT NULL,
+  CONSTRAINT unique_user_achievement UNIQUE (user_id, achievement_id)
+);
+
+COMMENT ON TABLE public.user_achievements IS 'Junction: which users earned which achievements';
+
+ALTER TABLE public.user_achievements ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "user_achievements_select_own"
+  ON public.user_achievements FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE TABLE public.leaderboard (
+  id              uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id         uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  total_xp        int DEFAULT 0 CHECK (total_xp >= 0),
+  successful_refs int DEFAULT 0 CHECK (successful_refs >= 0),
+  rank            int,
+  updated_at      timestamptz DEFAULT now() NOT NULL
+);
+
+COMMENT ON TABLE public.leaderboard IS 'Leaderboard snapshot for referral rankings';
+
+CREATE TRIGGER set_leaderboard_updated_at
+  BEFORE UPDATE ON public.leaderboard
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+CREATE UNIQUE INDEX idx_leaderboard_user ON public.leaderboard (user_id);
+CREATE INDEX idx_leaderboard_rank ON public.leaderboard (rank);
+
+ALTER TABLE public.leaderboard ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "leaderboard_select_all"
+  ON public.leaderboard FOR SELECT
+  TO authenticated
+  USING (true);
+
+-- ============================================================
+-- 11. USEFUL FUNCTIONS
 -- ============================================================
 
 -- Search opportunities by keyword (ILIKE pattern matching)

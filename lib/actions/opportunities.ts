@@ -2,7 +2,7 @@
 
 import { createClient, getUser } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import type { OpportunityType, BudgetType, LocationType } from "@/lib/database.types";
+import type { Database, OpportunityType, BudgetType, LocationType } from "@/lib/database.types";
 
 export interface OpportunityFormData {
   brand_id: string;
@@ -129,7 +129,7 @@ export async function updateOpportunity(
     return { success: false, error: "You don't have permission to edit this." };
   }
 
-  const updateData: Record<string, unknown> = {};
+  const updateData: Database["public"]["Tables"]["opportunities"]["Update"] = {};
   if (data.title !== undefined) updateData.title = data.title.trim();
   if (data.description !== undefined) updateData.description = data.description.trim();
   if (data.opportunity_type !== undefined) updateData.opportunity_type = data.opportunity_type;
@@ -151,7 +151,7 @@ export async function updateOpportunity(
   if (Object.keys(updateData).length > 0) {
     const { error } = await supabase
       .from("opportunities")
-      .update(updateData as never)
+      .update(updateData)
       .eq("id", id);
 
     if (error) return { success: false, error: `Update failed: ${error.message}` };

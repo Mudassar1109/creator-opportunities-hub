@@ -95,6 +95,30 @@ export async function getUserWithRole() {
   };
 }
 
+// ─── Service-role client (admin-only queries bypassing RLS) ──
+
+export function createServiceClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !key) {
+    throw new Error(
+      "Missing SUPABASE_SERVICE_ROLE_KEY. Add it to .env.local for admin operations."
+    );
+  }
+
+  return createServerClient<Database>(url, key, {
+    cookies: {
+      getAll() {
+        return [];
+      },
+      setAll() {
+        // service-role client doesn't need cookies
+      },
+    },
+  });
+}
+
 // ─── Convenience: get current user only if admin ──────────
 // Uses dual validation from lib/admin.ts (role + env email whitelist).
 // Future: will also verify 2FA status, session TTL, and login notification.

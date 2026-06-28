@@ -4,6 +4,7 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
+import type { Database } from "@/lib/database.types";
 
 export interface HomepageStats {
   totalCreators: number;
@@ -189,8 +190,8 @@ export async function getFeaturedOpportunities(): Promise<OpportunityWithBrand[]
     applications_count: opp.applications_count,
     published_at: opp.published_at,
     expires_at: opp.expires_at,
-    brand: opp.brand as any,
-    categories: (opp.categories as any[]).map((c) => c.categories),
+    brand: opp.brand as Database["public"]["Tables"]["brands"]["Row"],
+    categories: (opp.categories as { categories: Database["public"]["Tables"]["categories"]["Row"] }[]).map((c) => c.categories),
   }));
 }
 
@@ -257,8 +258,8 @@ export async function getLatestOpportunities(): Promise<OpportunityWithBrand[]> 
     applications_count: opp.applications_count,
     published_at: opp.published_at,
     expires_at: opp.expires_at,
-    brand: opp.brand as any,
-    categories: (opp.categories as any[]).map((c) => c.categories),
+    brand: opp.brand as Database["public"]["Tables"]["brands"]["Row"],
+    categories: (opp.categories as { categories: Database["public"]["Tables"]["categories"]["Row"] }[]).map((c) => c.categories),
   }));
 }
 
