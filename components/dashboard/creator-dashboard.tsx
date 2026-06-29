@@ -20,7 +20,7 @@ export async function CreatorDashboard({ user, profile }: Props) {
 
   const { data: applications } = await supabase
     .from("applications")
-    .select("*, opportunities(title, brand_id, opportunity_type, status)")
+    .select("*, opportunities(title, brand_id, opportunity_type, status, slug)")
     .eq("creator_id", user.id)
     .order("created_at", { ascending: false })
     .limit(5);
@@ -257,11 +257,11 @@ export async function CreatorDashboard({ user, profile }: Props) {
             ) : (
               <div className="space-y-3">
                 {applications.map((app) => {
-                  const opp = app.opportunities as { title?: string; opportunity_type?: string } | null;
+                  const opp = app.opportunities as { title?: string; opportunity_type?: string; slug?: string } | null;
                   return (
                     <Link
                       key={app.id}
-                      href={`/opportunities/${app.opportunity_id}`}
+                      href={`/opportunities/${opp?.slug ?? app.opportunity_id}`}
                       className="group flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md hover:border-indigo-200 hover:-translate-y-0.5 sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div className="min-w-0 flex-1">
