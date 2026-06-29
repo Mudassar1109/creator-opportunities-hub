@@ -14,6 +14,7 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { deleteAccount as deleteAccountAction } from "@/lib/actions/settings";
 import type { User } from "@supabase/supabase-js";
 import type { Profile } from "@/lib/database.types";
 import { useTheme } from "next-themes";
@@ -126,14 +127,13 @@ export function SettingsForm({ user, profile }: Props) {
 
     setError(null);
     setSaving(true);
-    const supabase = createClient();
 
-    const { error } = await supabase.auth.admin.deleteUser(user.id);
+    const { success, error } = await deleteAccountAction();
 
     setSaving(false);
 
-    if (error) {
-      setError(`Failed to delete account: ${error.message}`);
+    if (!success || error) {
+      setError(`Failed to delete account: ${error}`);
       return;
     }
 
