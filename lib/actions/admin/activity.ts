@@ -1,4 +1,4 @@
-import { getAdminUser } from "@/lib/supabase/server";
+import { createServiceClient, getAdminUser } from "@/lib/supabase/server";
 
 export type ActivityAction =
   | "Login"
@@ -37,94 +37,61 @@ export interface ActivityEntry {
   createdAt: string;
 }
 
-const adminNames = [
-  "Muhammad Mudassar",
-  "Sarah Johnson",
-  "Alex Chen",
-  "Emily Davis",
-  "Marcus Williams",
-];
-
-const adminEmails = [
-  "admin@creatorhub.com",
-  "sarah.j@creatorhub.com",
-  "alex.chen@creatorhub.com",
-  "emily.d@creatorhub.com",
-  "marcus.w@creatorhub.com",
-];
-
-const actions: ActivityAction[] = [
-  "Login", "Logout", "Create", "Update", "Delete", "Approve", "Reject", "Suspend", "Restore",
-];
-
-const modules: ActivityModule[] = [
-  "Users", "Brands", "Opportunities", "Applications", "Reports", "Settings", "Referral",
-];
-
-const statuses: ActivityStatus[] = ["Success", "Failure", "Pending"];
-
-const targetsByModule: Record<ActivityModule, string[]> = {
-  Users: ["John Doe", "Jane Smith", "Robert Kim", "Lisa Park", "David Brown", "Emma Wilson"],
-  Brands: ["TechCorp", "FashionHub", "GreenLife", "SmartGear", "PureBeauty", "FitWorld"],
-  Opportunities: ["Brand Deal: Summer Campaign", "Affiliate Program Q3", "Sponsored Content", "UGC Job #42", "Creator Collab"],
-  Applications: ["Application for Brand Deal", "Application for UGC Job", "Sponsorship Request", "Collab Proposal"],
-  Reports: ["Report #1024", "Report #1025", "Report #1026", "Report #1027"],
-  Settings: ["Site Settings", "Email Config", "Security Settings", "Feature Flags"],
-  Referral: ["Referral Program Settings", "XP Configuration", "Leaderboard Reset"],
+const eventActionMap: Record<string, ActivityAction> = {
+  user_registered: "Create",
+  brand_registered: "Create",
+  opportunity_created: "Create",
+  application_submitted: "Create",
+  report_created: "Create",
 };
 
-const detailTemplates: Record<ActivityAction, string> = {
-  Login: "Admin logged into the dashboard from {ip}",
-  Logout: "Admin logged out of the dashboard",
-  Create: "Created new {module} entry: {target}",
-  Update: "Updated {module} record: {target}",
-  Delete: "Deleted {module} entry: {target}",
-  Approve: "Approved {module}: {target}",
-  Reject: "Rejected {module}: {target}",
-  Suspend: "Suspended {module}: {target}",
-  Restore: "Restored {module}: {target}",
+const eventModuleMap: Record<string, ActivityModule> = {
+  user_registered: "Users",
+  brand_registered: "Brands",
+  opportunity_created: "Opportunities",
+  application_submitted: "Applications",
+  report_created: "Reports",
 };
 
-function randomDate(daysBack: number): string {
-  const d = new Date(Date.now() - Math.floor(Math.random() * daysBack * 24 * 60 * 60 * 1000));
-  return d.toISOString();
+function eventToActivity(event: { id: string; event_type: string; event_data: any; user_id: string | null; created_at: string }): ActivityEntry {
+  return {
+    id: event.id,
+    adminName: "System",
+    adminEmail: "system@creatorhub.com",
+    action: eventActionMap[event.event_type] ?? "Create",
+    module: eventModuleMap[event.event_type] ?? "Settings",
+    target: event.event_type,
+    targetId: event.id,
+    status: "Success" as ActivityStatus,
+    details: `Event: ${event.event_type}`,
+    ipAddress: "0.0.0.0",
+    userAgent: "System",
+    createdAt: event.created_at,
+  };
 }
 
-function randomIp(): string {
-  return `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`;
+function reportToActivity(report: { id: string; report_type: string; reason: string; status: string; created_at: string }): ActivityEntry {
+  const actionMap: Record<string, ActivityAction> = {
+    pending: "Create",
+    under_review: "Update",
+    resolved: "Approve",
+    dismissed: "Reject",
+  };
+  return {
+    id: report.id,
+    adminName: "System",
+    adminEmail: "system@creatorhub.com",
+    action: actionMap[report.status] ?? "Update",
+    module: "Reports" as ActivityModule,
+    target: `Report: ${report.report_type}`,
+    targetId: report.id,
+    status: report.status === "dismissed" ? "Failure" as ActivityStatus : "Success" as ActivityStatus,
+    details: report.reason.slice(0, 200),
+    ipAddress: "0.0.0.0",
+    userAgent: "System",
+    createdAt: report.created_at,
+  };
 }
-
-function generateActivity(count: number): ActivityEntry[] {
-  return Array.from({ length: count }, (_, i) => {
-    const adminIdx = Math.floor(Math.random() * adminNames.length);
-    const action = actions[Math.floor(Math.random() * actions.length)];
-    const module = modules[Math.floor(Math.random() * modules.length)];
-    const targets = targetsByModule[module];
-    const target = targets[Math.floor(Math.random() * targets.length)];
-    const status = Math.random() > 0.15 ? "Success" : Math.random() > 0.5 ? "Failure" : "Pending";
-    const ip = randomIp();
-
-    return {
-      id: `act-${String(i + 1).padStart(4, "0")}`,
-      adminName: adminNames[adminIdx],
-      adminEmail: adminEmails[adminIdx],
-      action,
-      module,
-      target,
-      targetId: `${module.toLowerCase().slice(0, 3)}-${Math.floor(Math.random() * 9000 + 1000)}`,
-      status: status as ActivityStatus,
-      details: detailTemplates[action]
-        .replace("{module}", module)
-        .replace("{target}", target)
-        .replace("{ip}", ip),
-      ipAddress: ip,
-      userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-      createdAt: randomDate(90),
-    };
-  }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-}
-
-const allActivity = generateActivity(250);
 
 export async function getAdminActivity(options?: {
   search?: string;
@@ -141,6 +108,22 @@ export async function getAdminActivity(options?: {
     return { data: [], pagination: { page: 1, pageSize: 15, total: 0, totalPages: 1, hasNext: false, hasPrev: false } };
   }
 
+  const supabase = createServiceClient();
+
+  const [eventsResult, reportsResult] = await Promise.all([
+    supabase.from("analytics_events").select("id, event_type, event_data, user_id, created_at").order("created_at", { ascending: false }).limit(250),
+    supabase.from("reports").select("id, report_type, reason, status, created_at").order("created_at", { ascending: false }).limit(100),
+  ]);
+
+  let activity: ActivityEntry[] = [];
+  if (eventsResult.data) {
+    activity = activity.concat(eventsResult.data.map(eventToActivity));
+  }
+  if (reportsResult.data) {
+    activity = activity.concat(reportsResult.data.map(reportToActivity));
+  }
+  activity.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
   const search = options?.search?.toLowerCase().trim() || "";
   const action = options?.action || "all";
   const module = options?.module || "all";
@@ -150,7 +133,7 @@ export async function getAdminActivity(options?: {
   const page = options?.page || 1;
   const pageSize = options?.pageSize || 15;
 
-  let filtered = [...allActivity];
+  let filtered = [...activity];
 
   if (search) {
     filtered = filtered.filter(
@@ -167,20 +150,16 @@ export async function getAdminActivity(options?: {
   if (action !== "all") {
     filtered = filtered.filter((e) => e.action === action);
   }
-
   if (module !== "all") {
     filtered = filtered.filter((e) => e.module === module);
   }
-
   if (status !== "all") {
     filtered = filtered.filter((e) => e.status === status);
   }
-
   if (dateFrom) {
     const from = new Date(dateFrom);
     filtered = filtered.filter((e) => new Date(e.createdAt) >= from);
   }
-
   if (dateTo) {
     const to = new Date(dateTo);
     to.setHours(23, 59, 59, 999);
@@ -194,14 +173,7 @@ export async function getAdminActivity(options?: {
 
   return {
     data,
-    pagination: {
-      page,
-      pageSize,
-      total,
-      totalPages,
-      hasNext: page < totalPages,
-      hasPrev: page > 1,
-    },
+    pagination: { page, pageSize, total, totalPages, hasNext: page < totalPages, hasPrev: page > 1 },
   };
 }
 
@@ -209,7 +181,17 @@ export async function getAdminActivityById(id: string): Promise<ActivityEntry | 
   const admin = await getAdminUser();
   if (!admin) return null;
 
-  return allActivity.find((e) => e.id === id) ?? null;
+  const supabase = createServiceClient();
+
+  const [evResult, rpResult] = await Promise.all([
+    supabase.from("analytics_events").select("id, event_type, event_data, user_id, created_at").eq("id", id).single(),
+    supabase.from("reports").select("id, report_type, reason, status, created_at").eq("id", id).single(),
+  ]);
+
+  if (evResult.data) return eventToActivity(evResult.data);
+  if (rpResult.data) return reportToActivity(rpResult.data);
+
+  return null;
 }
 
 export async function getAdminActivitySummary() {
@@ -217,23 +199,49 @@ export async function getAdminActivitySummary() {
   if (!admin) {
     return { total: 0, byAction: {} as Record<string, number>, byModule: {} as Record<string, number>, byStatus: {} as Record<string, number>, last24h: 0 };
   }
+
+  const supabase = createServiceClient();
+  const [eventsResult, reportsResult] = await Promise.all([
+    supabase.from("analytics_events").select("id, event_type, created_at").order("created_at", { ascending: false }).limit(250),
+    supabase.from("reports").select("id, report_type, status, created_at").order("created_at", { ascending: false }).limit(100),
+  ]);
+
   const byAction: Record<string, number> = {};
   const byModule: Record<string, number> = {};
   const byStatus: Record<string, number> = {};
 
-  for (const e of allActivity) {
-    byAction[e.action] = (byAction[e.action] || 0) + 1;
-    byModule[e.module] = (byModule[e.module] || 0) + 1;
-    byStatus[e.status] = (byStatus[e.status] || 0) + 1;
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  let last24h = 0;
+
+  if (eventsResult.data) {
+    for (const ev of eventsResult.data) {
+      const action = eventActionMap[ev.event_type] ?? "Create";
+      const mod = eventModuleMap[ev.event_type] ?? "Settings";
+      byAction[action] = (byAction[action] || 0) + 1;
+      byModule[mod] = (byModule[mod] || 0) + 1;
+      byStatus.Success = (byStatus.Success || 0) + 1;
+      if (new Date(ev.created_at) > twentyFourHoursAgo) last24h++;
+    }
+  }
+
+  if (reportsResult.data) {
+    for (const rp of reportsResult.data) {
+      const actionMap: Record<string, string> = {
+        pending: "Create", under_review: "Update", resolved: "Approve", dismissed: "Reject",
+      };
+      const action = actionMap[rp.status] ?? "Update";
+      byAction[action] = (byAction[action] || 0) + 1;
+      byModule.Reports = (byModule.Reports || 0) + 1;
+      byStatus[rp.status === "dismissed" ? "Failure" : "Success"] = (byStatus[rp.status === "dismissed" ? "Failure" : "Success"] || 0) + 1;
+      if (new Date(rp.created_at) > twentyFourHoursAgo) last24h++;
+    }
   }
 
   return {
-    total: allActivity.length,
+    total: (eventsResult.data?.length ?? 0) + (reportsResult.data?.length ?? 0),
     byAction,
     byModule,
     byStatus,
-    last24h: allActivity.filter(
-      (e) => new Date(e.createdAt) > new Date(Date.now() - 24 * 60 * 60 * 1000)
-    ).length,
+    last24h,
   };
 }
