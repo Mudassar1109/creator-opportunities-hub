@@ -18,6 +18,7 @@ export async function GET(request: Request) {
   const code = requestUrl.searchParams.get("code");
   const refCode = requestUrl.searchParams.get("ref");
   const roleParam = requestUrl.searchParams.get("role") as "creator" | "brand" | null;
+  const redirectParam = requestUrl.searchParams.get("redirect");
   const error = requestUrl.searchParams.get("error");
   const errorDescription = requestUrl.searchParams.get("error_description");
 
@@ -143,8 +144,8 @@ export async function GET(request: Request) {
         }
       }
 
-      // Redirect based on effective role
-      redirectTo = effectiveRole === "brand" ? "/dashboard/opportunities" : "/dashboard";
+      // Redirect based on effective role (or redirect param from login page)
+      redirectTo = redirectParam ?? (effectiveRole === "brand" ? "/dashboard/opportunities" : "/dashboard");
       console.log("[Auth Callback] Redirecting to:", redirectTo);
     }
 

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useState, FormEvent, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 
@@ -55,9 +55,11 @@ function Spinner() {
   );
 }
 
-// ─── Login Page ──────────────────────────────────────────────
-export default function LoginPage() {
+// ─── Login Page Content ──────────────────────────────────────
+function LoginPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -93,7 +95,7 @@ export default function LoginPage() {
     }
 
     setSuccess("Login successful! Redirecting…");
-    router.push("/");
+    router.push(redirectTo);
     router.refresh();
   }
 
@@ -104,10 +106,14 @@ export default function LoginPage() {
     setGoogleLoading(true);
 
     const supabase = createClient();
+    const redirectParams = new URLSearchParams();
+    if (redirectTo !== "/") redirectParams.set("redirect", redirectTo);
+    const callbackUrl = `${window.location.origin}/auth/callback${redirectParams.toString() ? `?${redirectParams.toString()}` : ""}`;
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: callbackUrl,
       },
     });
 
@@ -294,5 +300,18 @@ export default function LoginPage() {
         </p>
       </div>
     </main>
+  );
+}
+
+// ─── Login Page with Suspense Boundary ─────────────────────
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <main className="flex min-h-screen flex-col items-center justify-center bg-white px-4 py-12">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
+      </main>
+    }>
+      <LoginPageContent />
+    </Suspense>
   );
 }
