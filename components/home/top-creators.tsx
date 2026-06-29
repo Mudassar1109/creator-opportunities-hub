@@ -51,11 +51,11 @@ export function TopCreators({ creators }: { creators: TopCreator[] }) {
       {creators.map((creator, i) => (
         <div
           key={creator.id}
-          className={`animate-fade-up animate-fade-up-delay-${Math.min(i + 1, 6)} group rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-500/10`}
+          className={`animate-fade-up animate-fade-up-delay-${Math.min(i + 1, 6)} group rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-500/10`}
           role="article"
         >
           {/* Avatar */}
-          <div className="relative mx-auto mb-3 h-16 w-16">
+          <div className="relative mx-auto mb-4 h-20 w-20">
             {creator.avatar_url ? (
               <img
                 src={creator.avatar_url}
@@ -65,7 +65,7 @@ export function TopCreators({ creators }: { creators: TopCreator[] }) {
               />
             ) : (
               <div
-                className="flex h-full w-full items-center justify-center rounded-full bg-indigo-100 text-xl font-bold text-indigo-600 ring-2 ring-slate-200 ring-offset-2"
+                className="flex h-full w-full items-center justify-center rounded-full bg-indigo-100 text-2xl font-bold text-indigo-600 ring-2 ring-slate-200 ring-offset-2"
                 aria-hidden="true"
               >
                 {creator.full_name[0]?.toUpperCase() ?? "?"}
@@ -85,23 +85,23 @@ export function TopCreators({ creators }: { creators: TopCreator[] }) {
           </div>
 
           {/* Name */}
-          <h3 className="text-sm font-bold text-slate-900">{creator.full_name}</h3>
-          <p className="text-xs text-slate-500">@{creator.username}</p>
+          <h3 className="text-base font-bold text-slate-900">{creator.full_name}</h3>
+          <p className="mt-0.5 text-xs text-slate-500">@{creator.username}</p>
 
           {/* Followers */}
           {creator.follower_count > 0 && (
-            <p className="mt-2 text-sm font-bold text-indigo-600">
+            <p className="mt-3 text-base font-bold text-indigo-600">
               {formatFollowers(creator.follower_count)} followers
             </p>
           )}
 
           {/* Platforms */}
           {creator.platforms.length > 0 && (
-            <div className="mt-2 flex flex-wrap justify-center gap-1">
+            <div className="mt-3 flex flex-wrap justify-center gap-1.5">
               {creator.platforms.slice(0, 4).map((p) => (
                 <span
                   key={p}
-                  className="text-base"
+                  className="text-lg"
                   title={p}
                   aria-label={p}
                 >
@@ -113,11 +113,11 @@ export function TopCreators({ creators }: { creators: TopCreator[] }) {
 
           {/* Niches */}
           {creator.niches.length > 0 && (
-            <div className="mt-3 flex flex-wrap justify-center gap-1.5">
+            <div className="mt-4 flex flex-wrap justify-center gap-1.5">
               {creator.niches.slice(0, 2).map((niche) => (
                 <span
                   key={niche}
-                  className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-[10px] font-semibold text-indigo-700"
+                  className="rounded-full bg-indigo-50 px-3 py-1 text-[11px] font-semibold text-indigo-700"
                 >
                   {niche}
                 </span>
@@ -127,7 +127,7 @@ export function TopCreators({ creators }: { creators: TopCreator[] }) {
 
           {/* Country */}
           {creator.country && (
-            <p className="mt-2 text-xs text-slate-400">{creator.country}</p>
+            <p className="mt-3 text-xs text-slate-400">{creator.country}</p>
           )}
         </div>
       ))}

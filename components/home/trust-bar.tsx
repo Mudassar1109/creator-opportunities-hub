@@ -84,7 +84,9 @@ export function TrustBar({
                 <dd className={`text-base font-extrabold tabular-nums ${item.color} sm:text-lg`}>
                   {item.value > 1000
                     ? `${(item.value / 1000).toFixed(0)}K+`
-                    : `${item.value}+`}
+                    : item.value > 0
+                      ? `${item.value}+`
+                      : '0'}
                 </dd>
                 <dt className="text-[11px] font-medium text-slate-500 sm:text-xs">{item.label}</dt>
               </div>

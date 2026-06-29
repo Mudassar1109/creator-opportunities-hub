@@ -31,7 +31,7 @@ export function FeaturedBrands({ brands }: { brands: FeaturedBrand[] }) {
       {brands.map((brand, i) => (
         <div
           key={brand.id}
-          className={`animate-fade-up animate-fade-up-delay-${Math.min(i + 1, 6)} group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-500/10`}
+          className={`animate-fade-up animate-fade-up-delay-${Math.min(i + 1, 6)} group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-500/10`}
           role="article"
         >
           <div className="flex items-start gap-4">
@@ -41,12 +41,12 @@ export function FeaturedBrands({ brands }: { brands: FeaturedBrand[] }) {
                 <img
                   src={brand.logo_url}
                   alt={`${brand.company_name} logo`}
-                  className="h-12 w-12 rounded-xl object-contain"
+                  className="h-14 w-14 rounded-xl object-contain"
                   loading="lazy"
                 />
               ) : (
                 <div
-                  className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-100 text-lg font-bold text-indigo-600"
+                  className="flex h-14 w-14 items-center justify-center rounded-xl bg-indigo-100 text-xl font-bold text-indigo-600"
                   aria-hidden="true"
                 >
                   {brand.company_name[0]?.toUpperCase()}
@@ -57,7 +57,7 @@ export function FeaturedBrands({ brands }: { brands: FeaturedBrand[] }) {
             {/* Details */}
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
-                <h3 className="truncate text-sm font-bold text-slate-900">{brand.company_name}</h3>
+                <h3 className="truncate text-base font-bold text-slate-900">{brand.company_name}</h3>
                 {brand.is_verified && (
                   <svg
                     className="h-4 w-4 shrink-0 text-blue-500"
@@ -74,15 +74,15 @@ export function FeaturedBrands({ brands }: { brands: FeaturedBrand[] }) {
                 )}
               </div>
               {brand.industry && (
-                <p className="mt-0.5 text-xs text-slate-500">{brand.industry}</p>
+                <p className="mt-1 text-xs font-medium text-slate-500">{brand.industry}</p>
               )}
             </div>
           </div>
 
           {/* Active opportunities count */}
-          <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
-            <span className="text-xs text-slate-500">Active opportunities</span>
-            <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700">
+          <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
+            <span className="text-xs font-medium text-slate-500">Active opportunities</span>
+            <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">
               {brand.active_opportunities_count}
             </span>
           </div>

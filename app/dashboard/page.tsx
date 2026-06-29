@@ -28,21 +28,21 @@ export default async function DashboardPage() {
 
   return (
     <DashboardLayout>
-      {/* Welcome Banner */}
-      <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6 sm:pt-8 lg:px-8">
-        <div className="mb-6 sm:mb-8">
-          <WelcomeBanner
-            fullName={role === "brand" ? (profile?.full_name ?? user.email?.split("@")[0]) : profile?.full_name}
-            avatarUrl={profile?.avatar_url}
-            email={user.email}
-            role={role}
-          />
-        </div>
-      </div>
-
       {/* Role-based Dashboard Content */}
       {role === "brand" ? (
-        <BrandDashboard user={user} />
+        <>
+          <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6 sm:pt-8 lg:px-8">
+            <div className="mb-6 sm:mb-8">
+              <WelcomeBanner
+                fullName={profile?.full_name ?? user.email?.split("@")[0]}
+                avatarUrl={profile?.avatar_url}
+                email={user.email}
+                role={role}
+              />
+            </div>
+          </div>
+          <BrandDashboard user={user} />
+        </>
       ) : (
         <CreatorDashboard user={user} profile={profile} />
       )}

@@ -59,21 +59,21 @@ export function Navbar() {
   }, []);
 
   const roleBadge = userRole === "brand"
-    ? "bg-purple-100 text-purple-700 border-purple-200"
-    : "bg-cyan-100 text-cyan-700 border-cyan-200";
+    ? "bg-indigo-50 text-indigo-700 border-indigo-200"
+    : "bg-cyan-50 text-cyan-700 border-cyan-200";
 
   const roleLabel = userRole === "brand" ? "Brand" : "Creator";
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/80 backdrop-blur-xl">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-purple-600 to-cyan-500 text-sm font-bold text-white shadow-md shadow-purple-500/20">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-sm font-bold text-white shadow-md">
             C
           </span>
-          <span className="text-lg font-bold tracking-tight text-gray-900 sm:text-xl">
-            Creator<span className="text-purple-600">Hub</span>
+          <span className="text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
+            Creator<span className="text-indigo-600">Hub</span>
           </span>
         </Link>
 
@@ -83,7 +83,7 @@ export function Navbar() {
             <li key={link.label}>
               <Link
                 href={link.href}
-                className="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 hover:text-gray-900"
+                className="rounded-lg px-3 py-2 text-sm font-medium text-slate-500 transition hover:bg-slate-50 hover:text-indigo-600"
               >
                 {link.label}
               </Link>
@@ -100,13 +100,13 @@ export function Navbar() {
               </span>
               <Link
                 href="/dashboard"
-                className="rounded-lg px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                className="text-sm font-bold text-slate-500 hover:text-indigo-600 transition"
               >
                 Dashboard
               </Link>
               <Link
                 href={userRole === "brand" ? "/dashboard/opportunities" : "/dashboard/applications"}
-                className="rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-purple-500/20 transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/30 hover:-translate-y-0.5"
+                className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-indigo-700 transition"
               >
                 {userRole === "brand" ? "My Opportunities" : "My Applications"}
               </Link>
@@ -115,13 +115,13 @@ export function Navbar() {
             <>
               <Link
                 href="/login"
-                className="rounded-lg px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                className="text-sm font-bold text-slate-500 hover:text-indigo-600 transition"
               >
                 Log In
               </Link>
               <Link
                 href="/signup/role"
-                className="rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-purple-500/20 transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/30 hover:-translate-y-0.5"
+                className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-indigo-700 transition"
               >
                 Get Started
               </Link>
@@ -131,7 +131,7 @@ export function Navbar() {
 
         {/* Mobile Hamburger */}
         <details className="relative lg:hidden">
-          <summary className="list-none cursor-pointer rounded-lg p-2 text-gray-700 hover:bg-gray-50">
+          <summary className="list-none cursor-pointer rounded-lg p-2 text-slate-500 hover:bg-slate-50">
             <svg
               className="h-6 w-6"
               fill="none"
@@ -146,20 +146,20 @@ export function Navbar() {
               />
             </svg>
           </summary>
-          <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-gray-100 bg-white p-4 shadow-xl">
+          <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
             <ul className="space-y-1">
               {NAV_LINKS.map((link) => (
                 <li key={link.label}>
                   <Link
                     href={link.href}
-                    className="block rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    className="block rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-indigo-600"
                   >
                     {link.label}
                   </Link>
                 </li>
               ))}
             </ul>
-            <div className="mt-4 space-y-2 border-t border-gray-100 pt-4">
+            <div className="mt-4 space-y-2 border-t border-slate-100 pt-4">
               {loaded && user ? (
                 <>
                   <div className="px-3 py-1">
@@ -169,13 +169,13 @@ export function Navbar() {
                   </div>
                   <Link
                     href="/dashboard"
-                    className="block rounded-lg px-3 py-2.5 text-center text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                    className="block rounded-lg px-3 py-2.5 text-center text-sm font-bold text-slate-500 hover:bg-slate-50 hover:text-indigo-600"
                   >
                     Dashboard
                   </Link>
                   <Link
                     href={userRole === "brand" ? "/dashboard/opportunities" : "/dashboard/applications"}
-                    className="block rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 px-5 py-2.5 text-center text-sm font-semibold text-white"
+                    className="block rounded-xl bg-indigo-600 px-5 py-2.5 text-center text-sm font-bold text-white shadow-sm hover:bg-indigo-700"
                   >
                     {userRole === "brand" ? "My Opportunities" : "My Applications"}
                   </Link>
@@ -184,13 +184,13 @@ export function Navbar() {
                 <>
                   <Link
                     href="/login"
-                    className="block rounded-lg px-3 py-2.5 text-center text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                    className="block rounded-lg px-3 py-2.5 text-center text-sm font-bold text-slate-500 hover:bg-slate-50 hover:text-indigo-600"
                   >
                     Log In
                   </Link>
                   <Link
                     href="/signup/role"
-                    className="block rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 px-5 py-2.5 text-center text-sm font-semibold text-white"
+                    className="block rounded-xl bg-indigo-600 px-5 py-2.5 text-center text-sm font-bold text-white shadow-sm hover:bg-indigo-700"
                   >
                     Get Started
                   </Link>

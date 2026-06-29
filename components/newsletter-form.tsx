@@ -63,37 +63,43 @@ export function NewsletterForm({ creatorCount }: NewsletterFormProps) {
 
   if (state === "success") {
     return (
-      <div className="relative">
-        <h2 className="text-2xl font-extrabold text-white sm:text-3xl lg:text-4xl">
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight text-indigo-600">
           Never Miss an Opportunity
         </h2>
-        <div className="mx-auto mt-8 flex max-w-md flex-col items-center gap-3 rounded-2xl border border-white/20 bg-white/10 px-6 py-8 backdrop-blur-sm">
-          <span className="text-4xl" aria-hidden="true">🎉</span>
-          <p className="text-base font-bold text-white">You&apos;re subscribed!</p>
-          <p className="text-sm text-white/75">
+        <div className="mx-auto mt-8 flex max-w-sm flex-col items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-6 py-8">
+          <svg className="h-12 w-12 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p className="text-base font-bold text-emerald-800">You&apos;re subscribed!</p>
+          <p className="text-sm text-emerald-600">
             We&apos;ll send you the best deals and creator opportunities every week.
           </p>
           <button
             type="button"
             onClick={() => setState("idle")}
-            className="mt-2 rounded-lg border border-white/30 bg-white/10 px-5 py-2 text-xs font-semibold text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50"
+            className="mt-2 rounded-xl border border-emerald-200 bg-white px-5 py-2 text-xs font-bold text-emerald-700 shadow-sm hover:bg-emerald-50 transition"
           >
             Subscribe another address
           </button>
         </div>
-        <p className="mt-4 text-xs text-white/60">No spam. Unsubscribe anytime.</p>
       </div>
     );
   }
 
   return (
-    <div className="relative">
-      <h2 className="text-2xl font-extrabold text-white sm:text-3xl lg:text-4xl">
+    <div>
+      <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50">
+        <svg className="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+        </svg>
+      </div>
+      <h2 className="text-3xl font-bold tracking-tight text-slate-900">
         Never Miss an Opportunity
       </h2>
-      <p className="mx-auto mt-3 max-w-xl text-sm text-white/80 sm:text-base">
+      <p className="mx-auto mt-3 max-w-xl text-sm text-slate-500 sm:text-base">
         Join{" "}
-        <span className="font-bold text-white">
+        <span className="font-bold text-indigo-600">
           {creatorCount > 0 ? `${creatorCount.toLocaleString()}+` : "thousands of"}
         </span>{" "}
         creators and get the best brand deals, sponsorships and creator jobs
@@ -123,14 +129,10 @@ export function NewsletterForm({ creatorCount }: NewsletterFormProps) {
             disabled={state === "loading"}
             aria-describedby={fieldError ? "newsletter-field-error" : undefined}
             aria-invalid={!!fieldError}
-            className={`w-full rounded-xl border-2 bg-white/10 px-5 py-3.5 text-sm text-white placeholder-white/60 outline-none backdrop-blur-sm transition focus:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60 ${
-              fieldError
-                ? "border-red-400/60 focus:border-red-400"
-                : "border-white/20 focus:border-white/40"
-            }`}
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
           />
           {fieldError && (
-            <p id="newsletter-field-error" className="mt-1.5 text-left text-xs text-red-300" role="alert">
+            <p id="newsletter-field-error" className="mt-1.5 text-left text-xs text-rose-500" role="alert">
               {fieldError}
             </p>
           )}
@@ -139,7 +141,7 @@ export function NewsletterForm({ creatorCount }: NewsletterFormProps) {
         <button
           type="submit"
           disabled={state === "loading"}
-          className="shrink-0 rounded-xl bg-white px-6 py-3.5 text-sm font-bold text-indigo-700 shadow-lg transition hover:bg-slate-100 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-indigo-700"
+          className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-indigo-700 transition disabled:cursor-not-allowed disabled:opacity-60"
         >
           {state === "loading" ? (
             <span className="flex items-center gap-2">
@@ -147,7 +149,7 @@ export function NewsletterForm({ creatorCount }: NewsletterFormProps) {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
               </svg>
-              Subscribing…
+              Subscribing...
             </span>
           ) : (
             "Subscribe Free"
@@ -157,14 +159,14 @@ export function NewsletterForm({ creatorCount }: NewsletterFormProps) {
 
       {state === "error" && errorMsg && (
         <div
-          className="mx-auto mt-4 max-w-md rounded-lg border border-red-400/30 bg-red-500/20 px-4 py-3 text-sm text-red-100"
+          className="mx-auto mt-4 max-w-md rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"
           role="alert"
         >
           {errorMsg}
         </div>
       )}
 
-      <p className="mt-4 text-xs text-white/60">
+      <p className="mt-4 text-xs text-slate-400">
         No spam. Unsubscribe anytime. We respect your privacy.
       </p>
     </div>
