@@ -105,8 +105,48 @@ export default async function AdminAnalyticsPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <TopBrandsList brands={data.topBrands} />
         <div className="space-y-6">
-          <ChartPlaceholder title="Platform Distribution" description="Breakdown by user role" />
-          <ChartPlaceholder title="Revenue Overview" description="Monthly revenue projection" />
+          <ChartPlaceholder title="Platform Distribution" description="Breakdown by user role">
+            <div className="flex h-48 items-center justify-center gap-8">
+              {data.platformDistribution.map((item) => {
+                const total = data.platformDistribution.reduce((s, d) => s + d.value, 0);
+                const pct = total > 0 ? Math.round((item.value / total) * 100) : 0;
+                const colors: Record<string, string> = {
+                  Creators: "bg-violet-500",
+                  Brands: "bg-amber-500",
+                  Other: "bg-slate-300",
+                };
+                return (
+                  <div key={item.label} className="flex flex-col items-center gap-2">
+                    <div className={`h-16 w-16 rounded-full ${colors[item.label] ?? "bg-slate-300"} flex items-center justify-center text-lg font-extrabold text-white shadow-sm`}>
+                      {pct}%
+                    </div>
+                    <span className="text-xs font-bold text-gray-500">{item.label}</span>
+                    <span className="text-sm font-extrabold text-gray-900">{item.value.toLocaleString()}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </ChartPlaceholder>
+          <ChartPlaceholder title="Revenue Overview" description="Monthly revenue projection">
+            <div className="flex h-48 items-end gap-2">
+              {data.revenueData.map((point) => {
+                const maxVal = Math.max(...data.revenueData.map((d) => d.value), 1);
+                const height = (point.value / maxVal) * 100;
+                return (
+                  <div key={point.label} className="flex flex-1 flex-col items-center gap-1">
+                    <span className="text-[10px] font-bold text-emerald-600">
+                      ${(point.value / 1000).toFixed(1)}k
+                    </span>
+                    <div
+                      className="w-full rounded-t-md bg-gradient-to-t from-emerald-400 to-emerald-300"
+                      style={{ height: `${height}%` }}
+                    />
+                    <span className="text-[10px] text-gray-400">{point.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </ChartPlaceholder>
         </div>
       </div>
     </div>

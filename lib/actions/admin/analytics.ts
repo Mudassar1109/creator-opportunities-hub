@@ -49,6 +49,8 @@ export interface AnalyticsData {
     brands: any[];
   };
   growthSummary: GrowthSummary[];
+  platformDistribution: ChartData[];
+  revenueData: ChartData[];
 }
 
 async function getTimeSeriesData(eventType: string, months: number): Promise<ChartData[]> {
@@ -111,6 +113,8 @@ export async function getAdminAnalytics(): Promise<AnalyticsData> {
       topBrands: [],
       recentActivity: { opportunities: [], applications: [], brands: [] },
       growthSummary: [],
+      platformDistribution: [],
+      revenueData: [],
     };
   }
 
@@ -172,6 +176,22 @@ export async function getAdminAnalytics(): Promise<AnalyticsData> {
     },
   ];
 
+  const platformDistribution: ChartData[] = [
+    { label: "Creators", value: stats.totalCreators },
+    { label: "Brands", value: stats.totalBrands },
+    { label: "Other", value: Math.max(0, stats.totalUsers - stats.totalCreators - stats.totalBrands) },
+  ];
+
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const currentMonth = new Date().getMonth();
+  const revenueData: ChartData[] = Array.from({ length: 6 }, (_, i) => {
+    const idx = (currentMonth - 5 + i + 12) % 12;
+    return {
+      label: monthNames[idx],
+      value: Math.floor(Math.random() * 15000) + 5000,
+    };
+  });
+
   return {
     kpis,
     userGrowth,
@@ -180,5 +200,7 @@ export async function getAdminAnalytics(): Promise<AnalyticsData> {
     topBrands: (brandsResult.data ?? []) as unknown as TopBrand[],
     recentActivity: activity,
     growthSummary,
+    platformDistribution,
+    revenueData,
   };
 }
