@@ -1,4 +1,4 @@
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient, getAdminUser } from "@/lib/supabase/server";
 import { getAdminStats } from "@/lib/actions/admin";
 import { getLiveActivity } from "@/lib/actions/homepage";
 
@@ -101,6 +101,19 @@ function generateMockChartData(months: number): ChartData[] {
 }
 
 export async function getAdminAnalytics(): Promise<AnalyticsData> {
+  const admin = await getAdminUser();
+  if (!admin) {
+    return {
+      kpis: [],
+      userGrowth: [],
+      applicationGrowth: [],
+      topCreators: [],
+      topBrands: [],
+      recentActivity: { opportunities: [], applications: [], brands: [] },
+      growthSummary: [],
+    };
+  }
+
   const supabase = await createClient();
   const stats = await getAdminStats();
 

@@ -1,4 +1,4 @@
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient, getAdminUser } from "@/lib/supabase/server";
 import type { ReportStatus } from "@/lib/database.types";
 
 function isValidStatus(s: string): s is ReportStatus {
@@ -30,6 +30,11 @@ export async function getAdminReports(params: {
   page?: number;
   pageSize?: number;
 }): Promise<AdminReportsResponse> {
+  const admin = await getAdminUser();
+  if (!admin) {
+    return { reports: [], total: 0, page: 1, pageSize: 12, totalPages: 1 };
+  }
+
   const { search, status, type, page = 1, pageSize = 12 } = params;
 
   try {

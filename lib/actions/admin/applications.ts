@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAdminUser } from "@/lib/supabase/server";
 import type { ApplicationStatus } from "@/lib/database.types";
 
 function isValidStatus(s: string): s is ApplicationStatus {
@@ -32,6 +32,11 @@ export async function getAdminApplications(params: {
   page?: number;
   pageSize?: number;
 }): Promise<AdminApplicationsResponse> {
+  const admin = await getAdminUser();
+  if (!admin) {
+    return { applications: [], total: 0, page: 1, pageSize: 12, totalPages: 1 };
+  }
+
   const supabase = await createClient();
   const { search, status, page = 1, pageSize = 12 } = params;
 

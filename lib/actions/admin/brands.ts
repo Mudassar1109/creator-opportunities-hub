@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAdminUser } from "@/lib/supabase/server";
 
 export interface AdminBrand {
   id: string;
@@ -28,6 +28,11 @@ export async function getAdminBrands(params: {
   page?: number;
   pageSize?: number;
 }): Promise<AdminBrandsResponse> {
+  const admin = await getAdminUser();
+  if (!admin) {
+    return { brands: [], total: 0, page: 1, pageSize: 12, totalPages: 1 };
+  }
+
   const supabase = await createClient();
   const { search, status, page = 1, pageSize = 12 } = params;
 

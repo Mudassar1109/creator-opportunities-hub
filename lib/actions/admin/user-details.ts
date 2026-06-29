@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAdminUser } from "@/lib/supabase/server";
 
 export interface AdminUserDetails {
   id: string;
@@ -35,6 +35,9 @@ export interface AdminUserDetailsResponse {
 export async function getAdminUserById(
   id: string
 ): Promise<AdminUserDetailsResponse | null> {
+  const admin = await getAdminUser();
+  if (!admin) return null;
+
   const supabase = await createClient();
 
   const { data: profile, error } = await supabase

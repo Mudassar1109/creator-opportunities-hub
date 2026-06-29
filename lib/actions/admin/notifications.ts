@@ -1,5 +1,7 @@
 "use server";
 
+import { getAdminUser } from "@/lib/supabase/server";
+
 export type AdminNotificationType = "User" | "Brand" | "Opportunity" | "Application" | "Report" | "System";
 export type PriorityLevel = "Low" | "Medium" | "High" | "Critical";
 
@@ -92,6 +94,11 @@ export async function getAdminNotifications(options?: {
   page?: number;
   pageSize?: number;
 }) {
+  const admin = await getAdminUser();
+  if (!admin) {
+    return { data: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 1, hasNext: false, hasPrev: false } };
+  }
+
   const search = options?.search?.toLowerCase().trim() || "";
   const type = options?.type || "all";
   const status = options?.status || "all";
@@ -147,6 +154,11 @@ export async function getAdminNotifications(options?: {
 }
 
 export async function getAdminNotificationSummary() {
+  const admin = await getAdminUser();
+  if (!admin) {
+    return { total: 0, unread: 0, read: 0, byType: {} as Record<AdminNotificationType, number>, byPriority: {} as Record<PriorityLevel, number> };
+  }
+
   const unread = allNotifications.filter((n) => !n.isRead).length;
   const byType = {} as Record<AdminNotificationType, number>;
   const byPriority = {} as Record<PriorityLevel, number>;

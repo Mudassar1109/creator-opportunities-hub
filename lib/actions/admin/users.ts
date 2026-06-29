@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAdminUser } from "@/lib/supabase/server";
 
 export interface AdminUser {
   id: string;
@@ -25,6 +25,11 @@ export async function getAdminUsers(params: {
   page?: number;
   pageSize?: number;
 }): Promise<AdminUsersResponse> {
+  const admin = await getAdminUser();
+  if (!admin) {
+    return { users: [], total: 0, page: 1, pageSize: 12, totalPages: 1 };
+  }
+
   const supabase = await createClient();
   const { search, role, page = 1, pageSize = 12 } = params;
 

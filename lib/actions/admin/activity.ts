@@ -1,3 +1,5 @@
+import { getAdminUser } from "@/lib/supabase/server";
+
 export type ActivityAction =
   | "Login"
   | "Logout"
@@ -134,6 +136,11 @@ export async function getAdminActivity(options?: {
   page?: number;
   pageSize?: number;
 }) {
+  const admin = await getAdminUser();
+  if (!admin) {
+    return { data: [], pagination: { page: 1, pageSize: 15, total: 0, totalPages: 1, hasNext: false, hasPrev: false } };
+  }
+
   const search = options?.search?.toLowerCase().trim() || "";
   const action = options?.action || "all";
   const module = options?.module || "all";
@@ -199,10 +206,17 @@ export async function getAdminActivity(options?: {
 }
 
 export async function getAdminActivityById(id: string): Promise<ActivityEntry | null> {
+  const admin = await getAdminUser();
+  if (!admin) return null;
+
   return allActivity.find((e) => e.id === id) ?? null;
 }
 
 export async function getAdminActivitySummary() {
+  const admin = await getAdminUser();
+  if (!admin) {
+    return { total: 0, byAction: {} as Record<string, number>, byModule: {} as Record<string, number>, byStatus: {} as Record<string, number>, last24h: 0 };
+  }
   const byAction: Record<string, number> = {};
   const byModule: Record<string, number> = {};
   const byStatus: Record<string, number> = {};

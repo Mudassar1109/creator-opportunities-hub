@@ -88,6 +88,9 @@ const fallbackSettings: PlatformSettings = {
 };
 
 export async function getAdminSettings(): Promise<PlatformSettings> {
+  const admin = await getAdminUser();
+  if (!admin) return fallbackSettings;
+
   try {
     const supabase = createServiceClient();
     const { data } = await supabase

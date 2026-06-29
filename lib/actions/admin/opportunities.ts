@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAdminUser } from "@/lib/supabase/server";
 import type { OpportunityStatus } from "@/lib/database.types";
 
 function isValidStatus(s: string): s is OpportunityStatus {
@@ -31,6 +31,11 @@ export async function getAdminOpportunities(params: {
   page?: number;
   pageSize?: number;
 }): Promise<AdminOpportunitiesResponse> {
+  const admin = await getAdminUser();
+  if (!admin) {
+    return { opportunities: [], total: 0, page: 1, pageSize: 12, totalPages: 1 };
+  }
+
   const supabase = await createClient();
   const { search, status, page = 1, pageSize = 12 } = params;
 
