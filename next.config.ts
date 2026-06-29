@@ -19,11 +19,6 @@ const nextConfig: NextConfig = {
         destination: "/dashboard",
         permanent: false,
       },
-      {
-        source: "/ref/:code",
-        destination: "/dashboard",
-        permanent: false,
-      },
     ];
   },
 };
