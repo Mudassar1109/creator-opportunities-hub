@@ -6,7 +6,6 @@ import { AnimatedCounter } from "@/components/animated-counter";
 import { NewsletterForm } from "@/components/newsletter-form";
 import { HeroSearch } from "@/components/home/hero-search";
 import { DashboardPreview } from "@/components/home/dashboard-preview";
-import { LiveActivity } from "@/components/home/live-activity";
 import { FeaturedBrands } from "@/components/home/featured-brands";
 import { TopCreators } from "@/components/home/top-creators";
 import { CategoriesBento } from "@/components/home/categories-bento";
@@ -16,7 +15,6 @@ import {
   OpportunityGridSkeleton,
   BrandGridSkeleton,
   CreatorGridSkeleton,
-  ActivitySkeleton,
   CategoryGridSkeleton,
 } from "@/components/home/skeletons";
 import {
@@ -26,8 +24,9 @@ import {
   getCategoriesWithCounts,
   getFeaturedBrands,
   getTopCreators,
-  getLiveActivity,
+  getUserDashboardStats,
 } from "@/lib/actions/homepage";
+import { getUser } from "@/lib/supabase/server";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -54,6 +53,8 @@ export const metadata = {
 };
 
 export default async function HomePage() {
+  const user = await getUser();
+
   const [
     stats,
     featuredOpps,
@@ -61,7 +62,7 @@ export default async function HomePage() {
     categories,
     featuredBrands,
     topCreators,
-    activity,
+    userStats,
   ] = await Promise.all([
     getHomepageStats(),
     getFeaturedOpportunities(),
@@ -69,7 +70,7 @@ export default async function HomePage() {
     getCategoriesWithCounts(),
     getFeaturedBrands(),
     getTopCreators(),
-    getLiveActivity(),
+    user ? getUserDashboardStats(user.id) : null,
   ]);
 
   return (
@@ -78,13 +79,85 @@ export default async function HomePage() {
       <MouseGlow />
 
       <main className="flex-1 bg-white text-slate-900">
+        {/* Announcement bar */}
+        <style>{`
+          @keyframes marquee-rtl {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+          }
+          .announcement-wrapper:hover .announcement-track {
+            animation-play-state: paused !important;
+          }
+        `}</style>
+        <div className="announcement-wrapper relative flex h-[42px] w-full items-center overflow-hidden bg-gradient-to-r from-indigo-600 to-blue-700 text-white" role="banner" aria-label="Announcement">
+          <div className="announcement-track flex shrink-0 items-center gap-6 whitespace-nowrap px-4 text-[13px] font-medium tracking-wide" style={{ animation: "marquee-rtl 30s linear infinite", willChange: "transform" }}>
+            <span>Product Launch Coming Soon</span>
+            <span className="text-white/30" aria-hidden="true">•</span>
+            <span>Creator Opportunities Hub 2026</span>
+            <span className="text-white/30" aria-hidden="true">•</span>
+            <span>Join Early Access</span>
+            <span className="text-white/30" aria-hidden="true">•</span>
+            <span>Brands &amp; Creators Welcome</span>
+            <span className="text-white/30" aria-hidden="true">•</span>
+            <span>Product Launch Coming Soon</span>
+            <span className="text-white/30" aria-hidden="true">•</span>
+            <span>Creator Opportunities Hub 2026</span>
+            <span className="text-white/30" aria-hidden="true">•</span>
+            <span>Join Early Access</span>
+            <span className="text-white/30" aria-hidden="true">•</span>
+            <span>Brands &amp; Creators Welcome</span>
+          </div>
+        </div>
         <Navbar />
+
+        {/* ── PERSONAL WELCOME (logged-in users only) ── */}
+        {user && userStats && (
+          <section className="relative bg-gradient-to-b from-indigo-50/50 to-white px-4 py-8 sm:py-10 lg:py-12" aria-label="Welcome">
+            <div className="mx-auto max-w-7xl">
+              <div className="rounded-2xl border border-indigo-100 bg-white p-6 shadow-sm sm:p-8">
+                <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-indigo-600">Welcome back</p>
+                    <h1 className="mt-1 text-2xl font-extrabold text-slate-900 sm:text-3xl">
+                      {userStats.fullName ?? user.email?.split("@")[0] ?? "Creator"}
+                    </h1>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {userStats.role === "brand" ? "Brand Account" : "Creator Account"}
+                      {" · "}
+                      <Link href="/dashboard" className="font-semibold text-indigo-600 hover:text-indigo-700">
+                        Go to Dashboard →
+                      </Link>
+                    </p>
+                  </div>
+                  <div className="flex gap-6">
+                    {userStats.role !== "brand" && (
+                      <div className="text-center">
+                        <p className="text-2xl font-extrabold text-indigo-600">{userStats.applicationsTotal}</p>
+                        <p className="text-xs font-medium text-slate-500">Applications</p>
+                      </div>
+                    )}
+                    {userStats.role === "brand" && (
+                      <div className="text-center">
+                        <p className="text-2xl font-extrabold text-indigo-600">{userStats.opportunitiesTotal}</p>
+                        <p className="text-xs font-medium text-slate-500">Opportunities</p>
+                      </div>
+                    )}
+                    <div className="text-center">
+                      <p className="text-2xl font-extrabold text-emerald-600">{stats.publishedOpportunities}</p>
+                      <p className="text-xs font-medium text-slate-500">Live Deals</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* ══════════════════════════════════════════════════════
             HERO — Clean light + dashboard preview
         ══════════════════════════════════════════════════════ */}
         <section
-          className="relative overflow-hidden bg-gradient-to-b from-white via-slate-50 to-white pb-24 pt-20 sm:pb-32 sm:pt-28 lg:pb-40 lg:pt-36"
+          className="relative overflow-hidden bg-gradient-to-b from-white via-slate-50 to-white pb-20 pt-16 sm:pb-28 sm:pt-24 lg:pb-36 lg:pt-32"
           aria-label="Hero"
         >
           {/* Subtle decorative blobs */}
@@ -160,9 +233,9 @@ export default async function HomePage() {
                 {/* Trust micro-stats */}
                 <div className="animate-fade-up animate-fade-up-delay-4 mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 lg:justify-start">
                   {[
-                    { value: stats.verifiedBrands, label: "Verified Brands", suffix: "+", color: "text-blue-600" },
-                    { value: stats.totalCreators, label: "Creators", suffix: "+", color: "text-indigo-600" },
-                    { value: stats.applicationsToday, label: "Applied Today", suffix: "", color: "text-cyan-600" },
+                    { value: stats.verifiedBrands, label: "Verified Brands", suffix: stats.verifiedBrands > 0 ? "+" : "", color: "text-blue-600" },
+                    { value: stats.totalCreators, label: "Creators", suffix: stats.totalCreators > 0 ? "+" : "", color: "text-indigo-600" },
+                    { value: stats.applicationsToday, label: "Applied Today", suffix: stats.applicationsToday > 0 ? "+" : "", color: "text-cyan-600" },
                   ].map((s) => (
                     <div key={s.label} className="text-center lg:text-left">
                       <p className={`text-xl font-extrabold tabular-nums ${s.color}`}>
@@ -233,10 +306,10 @@ export default async function HomePage() {
           <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-2 gap-8 lg:grid-cols-4">
               {[
-                { value: stats.publishedOpportunities, label: "Live Opportunities", icon: "🎯", suffix: "+" },
-                { value: stats.totalCreators, label: "Registered Creators", icon: "🎨", suffix: "+" },
-                { value: stats.totalBrands, label: "Partner Brands", icon: "🏢", suffix: "+" },
-                { value: stats.totalApplications, label: "Applications Sent", icon: "✉️", suffix: "+" },
+                { value: stats.publishedOpportunities, label: "Live Opportunities", icon: "🎯", suffix: stats.publishedOpportunities > 0 ? "+" : "" },
+                { value: stats.totalCreators, label: "Registered Creators", icon: "🎨", suffix: stats.totalCreators > 0 ? "+" : "" },
+                { value: stats.totalBrands, label: "Partner Brands", icon: "🏢", suffix: stats.totalBrands > 0 ? "+" : "" },
+                { value: stats.totalApplications, label: "Applications Sent", icon: "✉️", suffix: stats.totalApplications > 0 ? "+" : "" },
               ].map((s, i) => (
                 <div
                   key={s.label}
@@ -267,13 +340,13 @@ export default async function HomePage() {
         ══════════════════════════════════════════════════════ */}
         <section
           id="opportunities"
-          className="relative bg-white px-4 py-20 sm:px-6 sm:py-28 lg:px-8"
+          className="relative bg-white px-4 py-16 sm:px-6 sm:py-24 lg:px-8"
           aria-labelledby="featured-heading"
         >
           <div className="pointer-events-none absolute left-1/2 top-0 h-72 w-[600px] -translate-x-1/2 rounded-full bg-indigo-50 blur-3xl" aria-hidden="true" />
 
           <div className="relative mx-auto max-w-7xl">
-            <div className="mx-auto mb-14 max-w-2xl text-center">
+            <div className="mx-auto mb-12 max-w-2xl text-center">
               <span className="mb-4 inline-block rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest text-indigo-700">
                 Featured
               </span>
@@ -289,8 +362,11 @@ export default async function HomePage() {
               {featuredOpps.length > 0 ? (
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   {featuredOpps.map((opp) => (
-                    <OpportunityCard
-                      key={opp.id}
+                    <div key={opp.id} className="relative">
+                      <span className="absolute -top-2.5 -right-2.5 z-10 rounded-full bg-gradient-to-r from-indigo-600 to-blue-600 px-2.5 py-0.5 text-[10px] font-bold text-white shadow-lg">
+                        Featured
+                      </span>
+                      <OpportunityCard
                       id={opp.id}
                       title={opp.title}
                       slug={opp.slug}
@@ -309,6 +385,7 @@ export default async function HomePage() {
                       applications_count={opp.applications_count}
                       published_at={opp.published_at}
                     />
+                  </div>
                   ))}
                 </div>
               ) : (
@@ -347,14 +424,14 @@ export default async function HomePage() {
         ══════════════════════════════════════════════════════ */}
         <section
           id="categories"
-          className="relative overflow-hidden bg-slate-50 px-4 py-20 sm:px-6 sm:py-28 lg:px-8"
+          className="relative overflow-hidden bg-slate-50 px-4 py-16 sm:px-6 sm:py-24 lg:px-8"
           aria-labelledby="categories-heading"
         >
           <div className="pointer-events-none absolute -right-40 top-1/2 h-[500px] w-[500px] -translate-y-1/2 rounded-full bg-indigo-100/60 blur-3xl" aria-hidden="true" />
           <div className="pointer-events-none absolute -left-40 bottom-0 h-80 w-80 rounded-full bg-cyan-100/40 blur-3xl" aria-hidden="true" />
 
           <div className="relative mx-auto max-w-7xl">
-            <div className="mx-auto mb-14 max-w-2xl text-center">
+            <div className="mx-auto mb-12 max-w-2xl text-center">
               <span className="mb-4 inline-block rounded-full border border-cyan-200 bg-cyan-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest text-cyan-700">
                 Trending
               </span>
@@ -375,77 +452,16 @@ export default async function HomePage() {
         </section>
 
         {/* ══════════════════════════════════════════════════════
-            LIVE ACTIVITY FEED
-        ══════════════════════════════════════════════════════ */}
-        <section
-          className="relative bg-white px-4 py-20 sm:px-6 sm:py-28 lg:px-8"
-          aria-labelledby="activity-heading"
-        >
-          <div className="mx-auto max-w-7xl">
-            <div className="grid gap-16 lg:grid-cols-2 lg:items-start">
-              {/* Left */}
-              <div className="lg:sticky lg:top-24">
-                <span className="mb-4 inline-block rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest text-emerald-700">
-                  Live
-                </span>
-                <h2 id="activity-heading" className="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-                  Happening Right Now
-                </h2>
-                <p className="mt-4 max-w-md text-base leading-relaxed text-slate-500 sm:text-lg">
-                  New opportunities, brand partnerships, and creator applications
-                  — updated in real time from the database.
-                </p>
-
-                <div className="mt-6 flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/80 px-5 py-4">
-                  <span className="animate-live-pulse h-3 w-3 shrink-0 rounded-full bg-emerald-500" aria-hidden="true" />
-                  <p className="text-sm font-semibold text-emerald-800">
-                    Live — new activity pushes automatically
-                  </p>
-                </div>
-
-                {/* Mini stats from activity */}
-                <dl className="mt-8 grid grid-cols-2 gap-4">
-                  {[
-                    { label: "New this week", value: activity.opportunities.length + activity.applications.length, icon: "📊" },
-                    { label: "Applied today", value: stats.applicationsToday, icon: "✉️" },
-                    { label: "Brands joined", value: activity.brands.length, icon: "🏢" },
-                    { label: "Total creators", value: stats.totalCreators, icon: "🎨" },
-                  ].map((item) => (
-                    <div key={item.label} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                      <span className="text-xl" aria-hidden="true">{item.icon}</span>
-                      <dd className="mt-1.5 text-2xl font-extrabold text-slate-900">
-                        {item.value > 1000 ? `${(item.value / 1000).toFixed(1)}K` : item.value}
-                        <span className="text-base font-bold text-indigo-600">+</span>
-                      </dd>
-                      <dt className="mt-0.5 text-xs text-slate-500">{item.label}</dt>
-                    </div>
-                  ))}
-                </dl>
-              </div>
-
-              {/* Right — live feed */}
-              <Suspense fallback={<ActivitySkeleton count={6} />}>
-                <LiveActivity
-                  initialOpportunities={activity.opportunities}
-                  initialApplications={activity.applications}
-                  initialBrands={activity.brands}
-                />
-              </Suspense>
-            </div>
-          </div>
-        </section>
-
-        {/* ══════════════════════════════════════════════════════
             FEATURED BRANDS
         ══════════════════════════════════════════════════════ */}
         <section
-          className="relative overflow-hidden bg-slate-50 px-4 py-20 sm:px-6 sm:py-28 lg:px-8"
+          className="relative overflow-hidden bg-slate-50 px-4 py-16 sm:px-6 sm:py-24 lg:px-8"
           aria-labelledby="brands-heading"
         >
           <div className="pointer-events-none absolute -left-40 top-1/2 h-[500px] w-[500px] -translate-y-1/2 rounded-full bg-indigo-100/50 blur-3xl" aria-hidden="true" />
 
           <div className="relative mx-auto max-w-7xl">
-            <div className="mx-auto mb-14 max-w-2xl text-center">
+            <div className="mx-auto mb-12 max-w-2xl text-center">
               <span className="mb-4 inline-block rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest text-blue-700">
                 Partners
               </span>
@@ -481,13 +497,13 @@ export default async function HomePage() {
             TOP CREATORS
         ══════════════════════════════════════════════════════ */}
         <section
-          className="relative bg-white px-4 py-20 sm:px-6 sm:py-28 lg:px-8"
+          className="relative bg-white px-4 py-16 sm:px-6 sm:py-24 lg:px-8"
           aria-labelledby="creators-heading"
         >
           <div className="pointer-events-none absolute right-0 top-0 h-[400px] w-[400px] rounded-full bg-blue-50 blur-3xl" aria-hidden="true" />
 
           <div className="relative mx-auto max-w-7xl">
-            <div className="mx-auto mb-14 max-w-2xl text-center">
+            <div className="mx-auto mb-12 max-w-2xl text-center">
               <span className="mb-4 inline-block rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest text-indigo-700">
                 Creators
               </span>
@@ -523,14 +539,14 @@ export default async function HomePage() {
             LATEST OPPORTUNITIES — dark section
         ══════════════════════════════════════════════════════ */}
         <section
-          className="relative overflow-hidden bg-slate-950 px-4 py-20 sm:px-6 sm:py-28 lg:px-8"
+          className="relative overflow-hidden bg-slate-950 px-4 py-16 sm:px-6 sm:py-24 lg:px-8"
           aria-labelledby="latest-heading"
         >
           <div className="pointer-events-none absolute -left-32 top-1/2 h-96 w-96 -translate-y-1/2 rounded-full bg-indigo-900/50 blur-3xl" aria-hidden="true" />
           <div className="pointer-events-none absolute -right-32 top-1/2 h-96 w-96 -translate-y-1/2 rounded-full bg-cyan-900/40 blur-3xl" aria-hidden="true" />
 
           <div className="relative mx-auto max-w-7xl">
-            <div className="mx-auto mb-14 max-w-2xl text-center">
+            <div className="mx-auto mb-12 max-w-2xl text-center">
               <span className="mb-4 inline-block rounded-full border border-cyan-700/50 bg-cyan-900/30 px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest text-cyan-400">
                 New
               </span>
@@ -552,8 +568,11 @@ export default async function HomePage() {
               {latestOpps.length > 0 ? (
                 <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {latestOpps.map((opp) => (
-                    <OpportunityCard
-                      key={opp.id}
+                    <div key={opp.id} className="relative">
+                      <span className="absolute -top-2.5 -right-2.5 z-10 rounded-full bg-cyan-500/90 px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md">
+                        New
+                      </span>
+                      <OpportunityCard
                       id={opp.id}
                       title={opp.title}
                       slug={opp.slug}
@@ -572,6 +591,7 @@ export default async function HomePage() {
                       applications_count={opp.applications_count}
                       published_at={opp.published_at}
                     />
+                  </div>
                   ))}
                 </div>
               ) : (
@@ -611,11 +631,11 @@ export default async function HomePage() {
         ══════════════════════════════════════════════════════ */}
         <section
           id="about"
-          className="relative bg-white px-4 py-20 sm:px-6 sm:py-28 lg:px-8"
+          className="relative bg-white px-4 py-16 sm:px-6 sm:py-24 lg:px-8"
           aria-labelledby="how-it-works-heading"
         >
           <div className="mx-auto max-w-7xl">
-            <div className="mx-auto mb-16 max-w-2xl text-center">
+            <div className="mx-auto mb-14 max-w-2xl text-center">
               <span className="mb-4 inline-block rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest text-indigo-700">
                 Simple
               </span>
@@ -671,7 +691,7 @@ export default async function HomePage() {
             NEWSLETTER CTA
         ══════════════════════════════════════════════════════ */}
         <section
-          className="relative overflow-hidden bg-slate-50 px-4 py-20 sm:px-6 sm:py-28 lg:px-8"
+          className="relative overflow-hidden bg-slate-50 px-4 py-16 sm:px-6 sm:py-24 lg:px-8"
           aria-labelledby="newsletter-heading"
         >
           <div className="mx-auto max-w-5xl">

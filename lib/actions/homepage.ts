@@ -168,7 +168,7 @@ export async function getFeaturedOpportunities(): Promise<OpportunityWithBrand[]
     .or("expires_at.is.null,expires_at.gt." + new Date().toISOString())
     .order("is_featured", { ascending: false })
     .order("published_at", { ascending: false })
-    .limit(6);
+    .limit(9);
 
   if (error) {
     console.error("Error fetching featured opportunities:", error);
@@ -236,7 +236,7 @@ export async function getLatestOpportunities(): Promise<OpportunityWithBrand[]> 
     .not("published_at", "is", null)
     .or("expires_at.is.null,expires_at.gt." + new Date().toISOString())
     .order("published_at", { ascending: false })
-    .limit(12);
+    .limit(16);
 
   if (error) {
     console.error("Error fetching latest opportunities:", error);
@@ -490,5 +490,29 @@ export async function getLiveActivity(): Promise<{
     opportunities: (opps ?? []) as ActivityOpportunity[],
     applications: (apps ?? []) as ActivityApplication[],
     brands: (brands ?? []) as ActivityBrand[],
+  };
+}
+
+export interface UserDashboardStats {
+  fullName: string | null;
+  role: string | null;
+  applicationsTotal: number;
+  opportunitiesTotal: number;
+}
+
+export async function getUserDashboardStats(userId: string): Promise<UserDashboardStats> {
+  const supabase = await createClient();
+
+  const [profileResult, appsResult, oppsResult] = await Promise.all([
+    supabase.from("profiles").select("full_name, role").eq("id", userId).single(),
+    supabase.from("applications").select("id", { count: "exact", head: true }).eq("creator_id", userId),
+    supabase.from("opportunities").select("id", { count: "exact", head: true }).eq("created_by", userId),
+  ]);
+
+  return {
+    fullName: profileResult.data?.full_name ?? null,
+    role: profileResult.data?.role ?? null,
+    applicationsTotal: appsResult.count ?? 0,
+    opportunitiesTotal: oppsResult.count ?? 0,
   };
 }
